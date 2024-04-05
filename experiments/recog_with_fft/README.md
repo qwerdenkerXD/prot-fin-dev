@@ -1,17 +1,30 @@
-# Recognition with Fast Fourier Transformation
+# Recognition with Fast Fourier Transformation <br> v01-exp-stft_params
 `NOTE: This README and the code are updated synchronously.`
 
-The concept of this experiment is to generate a vector of values from an amino acid sequence, using one factor of [the table of Kidera factors](../../materials/Amino_Acid_Kidera_Factors.csv), for now. These factors represent the 10 most identifying features of amino acids.<br>
-With doing a Short Time Fourier Transformation (STFT) on the created vector, it is now possible to find structual features in the sequence to create a specific constellation of them.
-
-Now, instead of looking on text-based likelihood, the goal is to identify a protein by its own sequence from this constellation, so it needs to be unique like a fingerprint, but still similar to related sequences of the same family and less similar to others.
+The purpose of this experiment on `prot-fin v0.1`  is to figure out which parameter values are the best for the STFT.<br>
+Here are gonna be tested:
+ - Window Size
+ - Overlap between Windows
+ - Number of maximum selected peaks per Window
 
 ---
 
 ## Usage
-1. go to `./methods`
-2. create a database of reference proteins: `python3 protfin.py create-db <ref-fasta>`
-3. find best scored matches for protein sequence samples: `python3 protfin.py find-matches <samples-fasta>`
+```sh
+cd methods
+bash slurm.sh ../../../materials/protein.fa ../../../materials/mapmanreferencebins.results.txt
+python3 stft_param_exp.py > ../results/stft_param_exp.summary.csv
+
+# optional, view results
+column -t -s "," ../results/stft_param_exp.summary.csv | less
+```
+
+The parameters are passed by environment variables to `protfin.py`, like this (with the default values):
+```sh
+WINDOW_SIZE=30 OVERLAP=15 N_PEAKS=0 WINDOW_TYPE=boxcar python3 protfin.py ...
+```
+Keep in mind that recognition with different parameters only works if the passed database has been created with them.<br>
+Just inspect the `slurm.sh` to see the workflow.
 
 ## Methods (`methods/*`)
 <ul>
@@ -90,6 +103,7 @@ Now, instead of looking on text-based likelihood, the goal is to identify a prot
             <code>actions.algorithm.hashes_from_seq(seq, prot_id)</code>
             <ul>
                 <li>just the workflow <code>seq_to_vectors</code> $\rightarrow$ <code>create_constellation</code> $\rightarrow$ <code>create_hashes</code></li>
+                <li>it accepts environment variables to set STFT parameters, these are: <code>WINDOW_SIZE</code>, <code>WINDOW_TYPE</code>, <code>OVERLAP</code>, <code>N_PEAKS</code></li>
             </ul>
             <code>tools.Fasta(fasta_file)</code>
             <ul>
@@ -130,6 +144,8 @@ Now, instead of looking on text-based likelihood, the goal is to identify a prot
             </table>
         </details>
     </li>
+    <li><code>slurm.sh</code> - A script to start jobs with <code>sbatch</code> for each parameter configuration to get the match summaries</li>
+    <li><code>stft_param_exp.py</code> - A script to summarize the generated summaries from jobs of <code>slurm.sh</code></li>
 </ul>
 
 ### Unit Tests
@@ -144,6 +160,7 @@ TQDM_DISABLE=1 python3 test.py
 |                          file                            |     content
 |----------------------------------------------------------|------------------
 |[test_selection.summary.csv](./results/test_selection.summary.csv)|a summary of the found matches for 217 protein sequences (7 per family)
+|[stft_param_exp.summary.csv](./results/stft_param_exp.summary.csv)|a summary of all summaries of matches for the different parameters
 
 ### Reproduce
 In this repository, `protein.fa` is used to generate the database. You can extract the file from [this archive](https://github.com/usadellab/prot-fin/raw/5be77c4247327e3958c89200c03a938ec4734834/material/Mapman_reference_DB_202310.tar.bz2). The archive also includes `mapmanreferencebins.results.txt` which maps the proteins to their families.
@@ -160,28 +177,54 @@ python3 protfin.py find-matches ../results/_test_selection.fa > ../results/_test
 python3 evaluation.py eval ../results/_test_selection.matches > ../results/test_selection.summary.csv
 ```
 
+[stft_param_exp.summary.csv](./results/stft_param_exp.summary.csv):
+```sh
+cd methods
+bash slurm.sh ../../../materials/protein.fa ../../../materials/mapmanreferencebins.results.txt
+python3 stft_param_exp.py > ../results/stft_param_exp.summary.csv
+```
+
 ---
 ## Discussion/Brainstorming
-The summary implies that longer sequences have a more accurate result than shorter ones. As the recognition is based on hash similarities, this implication is not that unexpected, as longer sequences produce more hashes. Interesting here is that same hash counts seem to cause the same match counts.<br>
-To increase the general accuracy of the algorithm, the hash creation has to be more quantitative or better, more qualitative.
+The result is interesting. There are some configurations with a high recognition potential.
+Following interpretions:
+ - accuracy increases by the overlap 
+ - small window sizes are very good in recognition (what happens here?)
+ - the number of selected peaks doesn't seem to matter (also, why?)
 
 Some ideas for future development:
  - add appropriate testing
- - find ways to create more hashes or to increase their quality
-   - find the best combination of parameters for the STFT $\rightarrow$ maybe more hashes
-   - don't just use the peaks only (`create_constellations`) $\rightarrow$ maybe more hashes
-   - include the frequencies' amplitudes of the STFT in the hashes (maybe 1 Bit if amplitude of frequency A is lower than from B) $\rightarrow$ maybe better quality
+ - analyze the identifying hashes for the best config (10, 9, 0) to find out why they are that unique (Maybe they are just unique, as the probability of duplicates between different proteins sinks for such a small window, as the fft can't find many peaks)
+ - inspect the other matches on proteins of same family (may be a not as good result as it is now)
 
 ---
 ## Environment
-
-System: `Ubuntu 20.04.6 LTS`
-Shell: `zsh 5.8`
-
-| dependency | version |
-|------------|---------|
-|   python3  | 3.8.10  |
-|    scipy   | 1.10.1  |
-|    numpy   | 1.23.0  |
-|   pandas   |  2.0.1  |
-|    tqdm    | 4.66.2  |
+<ul>
+    <li><b>Personal</b><br>
+        System: <code>Ubuntu 20.04.6 LTS</code>
+        Shell: <code>zsh 5.8</code><br>
+        <br>
+        <table>
+            <th>dependency</th><th>version</th>
+            <tr><td>python3</td><td>3.8.10</td></tr>
+            <tr><td>scipy</td><td>1.10.1</td></tr>
+            <tr><td>numpy</td><td>1.23.0</td></tr>
+            <tr><td>pandas</td><td>2.0.1</td></tr>
+            <tr><td>tqdm</td><td>4.66.2</td></tr>
+        </table>
+    </li>
+    <li><b>Slurm</b><br>
+        System: <code>Ubuntu 20.04.4 LTS</code>
+        Shell: <code>zsh 5.8.1</code><br>
+        <br>
+        <table>
+            <th>dependency</th><th>version</th>
+            <tr><td>slurm-wlm</td><td>21.08.5</td></tr>
+            <tr><td>python3</td><td>3.10.12</td></tr>
+            <tr><td>scipy</td><td>1.11.4</td></tr>
+            <tr><td>numpy</td><td>1.26.2</td></tr>
+            <tr><td>pandas</td><td>2.1.3</td></tr>
+            <tr><td>tqdm</td><td>4.66.2</td></tr>
+        </table>
+    </li>
+</ul>
