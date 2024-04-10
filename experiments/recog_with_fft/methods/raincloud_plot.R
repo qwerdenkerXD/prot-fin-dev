@@ -17,7 +17,7 @@ library(tibble)
 value_titles <- args[seq(1, length(args) - 1, 2)]
 values <- args[seq(2, length(args) - 1, 2)]
 values <- lapply(values, function(v) {
-  sapply(read.csv(v, header=FALSE, nrows=1, sep=","), as.numeric) # pseudo count
+  sapply(read.csv(v, header=FALSE, nrows=1, sep=","), function(v) {as.numeric(v) + 1}) # pseudo count
 })
 groups <- lapply(seq_along(values), function(i) {tibble(value = values[[i]], group = value_titles[i])})
 
@@ -28,7 +28,7 @@ plt <- ggplot(data, aes(x = group, y = value, fill = group)) +
   stat_halfeye(width = 2, position = position_nudge(x = 0.11, y=0), alpha = 0.8) +
   coord_flip() +
   theme(plot.title = element_text(hjust = 0.5), axis.ticks.y = element_blank(), legend.position = "none") +
-  scale_y_continuous(n.breaks = 10) +
+  scale_y_continuous(n.breaks = 6, trans = "log10") +
   labs(x = "Frequencies", y = Sys.getenv("X_LABEL", "Values")) +
   ggtitle(Sys.getenv("TITLE", "Distribution of values"))
 

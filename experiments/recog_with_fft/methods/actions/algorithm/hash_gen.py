@@ -31,6 +31,7 @@ def create_hashes(
     DIFFERENCE_BITS = 12
 
     # Iterate through the constellation map
+    potential_hashes = 0
     for idx, (index, freq) in enumerate(constellation_map):
         # Iterate through the next pairs to produce combinatorial hashes
         for other_index, other_freq in constellation_map[idx:]:
@@ -43,7 +44,12 @@ def create_hashes(
 
             # Produce a 32 bit hash
             hash_: Hash = create_hash((diff, DIFFERENCE_BITS), (other_freq, FREQUENCY_BITS), (freq, FREQUENCY_BITS))
-            hashes[hash_] = (index, prot_id)
+            potential_hashes += 1
+            if hashes.get(hash_) is None:
+                hashes[hash_] = []
+            if len(hashes[hash_]) < 10:
+                hashes[hash_].append((index, prot_id))
+    print(potential_hashes, end=",")
     return hashes
 
 

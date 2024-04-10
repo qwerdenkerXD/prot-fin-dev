@@ -1,10 +1,8 @@
-# Recognition with Fast Fourier Transformation
+# Recognition with Fast Fourier Transformation<br>v0.2-exp-hash_analysises
 `NOTE: This README and the code are updated synchronously.`
 
-The concept of this experiment is to generate a vector of values from an amino acid sequence, using one factor of [the table of Kidera factors](../../materials/Amino_Acid_Kidera_Factors.csv), for now. These factors represent the 10 most identifying features of amino acids.<br>
-With doing a Short Time Fourier Transformation (STFT) on the created vector, it is now possible to find structual features in the sequence to create a specific constellation of them.
-
-Now, instead of looking on text-based likelihood, the goal is to identify a protein by its own sequence from this constellation, so it needs to be unique like a fingerprint, but still similar to related sequences of the same family and less similar to others.
+This experiment is to do some analyzing on the generated hashes to get an overview of what is actually calculated.<br>
+As protfin is based on hash recognition, this will help to improve its accuracy efficiently.
 
 ---
 
@@ -38,24 +36,6 @@ cd methods
 TQDM_DISABLE=1 python3 test.py
 ```
 
-
-## Experiments
-<ul>
-    <li>
-        <details>
-            <summary><code>v01-exp-stft_params</code> - Trying different parameters for the STFT to fit the best: <a href="https://github.com/usadellab/prot-fin/blob/v0.1-exp-stft_params/experiments/recog_with_fft">go to branch</a></summary>
-            The creation of the constellation map is based on the STFT.<br>
-            To increase the accuracy of the recognition algorithm, it is very important to optimize the parameters to generate the most effective constellation map for a protein.
-            <br><br>
-            Therefore, window size, overlap and number of selected peaks are passed to <code>prot-fin</code>.<br>
-            As every configuration of parameters needs a custom database, this procedure is done in parallel on a compute cluster.<br>
-            The results of each recognition process are summarized in <a href="https://github.com/usadellab/prot-fin/blob/v0.1-exp-stft_params/experiments/recog_with_fft/results/stft_param_exp.summary.csv">stft_param_exp.summary.csv</a>.
-            <br><br>
-            It looks like that the maximum overlap (so hop size of 1) is the best option for accuracy.<br>
-            Currently, for window size and selected peaks are further analyses necessary.
-        </details>
-    </li>
-</ul>
 
 ## Methods (`methods/*`)
 <ul>
@@ -204,6 +184,7 @@ TQDM_DISABLE=1 python3 test.py
 |----------------------------------------------------------|------------------
 |[test_selection.summary.csv](./results/test_selection.summary.csv)|a summary of the found matches for 217 protein sequences (7 per family)
 |[hash_count_dist.png](./results/hash_count_dist.png)|a raincloud plot of the hash counts calculated for the sequences
+|[potential_hashes.png](./results/potential_hashes.png)|a raincloud plot of the counts of *all* calculated hashes. By default, duplicate hashes are stored only one time, so many are just ignored, as the plot demonstrates.
 
 ### Reproduce
 In this repository, `protein.fa` is used to generate the database. You can extract the file from [this archive](https://github.com/usadellab/prot-fin/raw/5be77c4247327e3958c89200c03a938ec4734834/material/Mapman_reference_DB_202310.tar.bz2). The archive also includes `mapmanreferencebins.results.txt` which maps the proteins to their families.
@@ -229,17 +210,22 @@ TITLE="Distribution of sequences' hash counts" X_LABEL="Hash counts" \
 Rscript raincloud_plot.R normal <(py evaluation.py print-hash-counts database.pickle) ../results/hash_count_dist.png
 ```
 
+[potential_hashes.png](./results/potential_hashes.png):
+```sh
+cd methods
+materials=../../../materials
+python3 protfin.py create-db $materials/protein.fa -p hash_analysises.pickle > ../results/_potential.hashes
+TITLE="Potential hashes" X_LABEL="Hash counts" \
+Rscript raincloud_plot.R actual <(py evaluation.py print-hash-counts hash_analysises.pickle) potential ../results/_potential.hashes ../results/potential_hashes.png
+```
+
 ---
 ## Discussion/Brainstorming
-The summary implies that longer sequences have a more accurate result than shorter ones. As the recognition is based on hash similarities, this implication is not that unexpected, as longer sequences produce more hashes. Interesting here is that same hash counts seem to cause the same match counts.<br>
-To increase the general accuracy of the algorithm, the hash creation has to be more quantitative or better, more qualitative.
+As shown in [potential_hashes.png](./results/potential_hashes.png), there are very many hashes that are just not used for recognition. Including more positions per hash instead of one only could increase accuracy of recognition, as the scoring would be improved for good matches.<br>
+But including more hashes will increase the disk usage and runtime for scoring. So that should be a thing to do at the end if necessary. Currently, it would make sense to increase hash quality, so making them more specific. This means less redundance and thus also bigger disk usage, but the stored hashes are selected more differentiated.
 
 Some ideas for future development:
  - add appropriate testing
- - find ways to create more hashes or to increase their quality
-   - find the best combination of parameters for the STFT $\rightarrow$ maybe more hashes
-   - don't just use the peaks only (`create_constellations`) $\rightarrow$ maybe more hashes
-   - include the frequencies' amplitudes of the STFT in the hashes (maybe 1 Bit if amplitude of frequency A is lower than from B) $\rightarrow$ maybe better quality
 
 ---
 ## Environment
