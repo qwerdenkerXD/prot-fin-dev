@@ -1,0 +1,4 @@
+Filename,Median_Hits,Average_Hits,Self_Matches,Unique_Self_Matches
+../results/find_peaks_selection.summary.csv,807.0,756.66,217,0
+../results/sorted_selection.summary.csv,864.0,738.01,217,0
+../results/test_selection.summary.csv,807.0,756.66,217,0

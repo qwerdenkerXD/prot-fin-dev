@@ -1,6 +1,9 @@
 from scipy import signal
 import numpy as np
 from tools import *
+from os import environ as env
+
+SELECTION = env.get("SELECTION")
 
 
 def create_constellation(
@@ -67,6 +70,9 @@ def stft_to_constellation(
         ) -> ConstellationMap:
     constellation_map: ConstellationMap = []
 
+    if len(frequencies):
+        assert frequencies[0] == 0, "First frequency is not always zero"
+
     # find and collect the most prominent frequencies from STFT per window
     for window_idx, amplitudes in zip(window_indexes, stft.T):
 
@@ -84,12 +90,24 @@ def stft_to_constellation(
 
 
 def find_peaks(spectrum: np.ndarray, n_peaks: int) -> List[int]:
-    # prominence=0 includes all peaks, but weights their prominence as well
-    peaks, props = signal.find_peaks(spectrum, prominence=0)
+    if SELECTION is None:
+        # prominence=0 includes all peaks, but weights their prominence as well
+        peaks, props = signal.find_peaks(spectrum, prominence=0)
 
-    # Only want the most prominent peaks
-    peaks: List[Tuple[int, int]] = sorted(zip(props["prominences"], peaks), reverse=True)
-    if n_peaks:
-        peaks = peaks[:n_peaks]
+        # Only want the most prominent peaks
+        peaks: List[Tuple[int, int]] = sorted(zip(props["prominences"], peaks), reverse=True)
+        if n_peaks:
+            peaks = peaks[:n_peaks]
 
-    return [p[1] for p in peaks]
+        return [p[1] for p in peaks]
+
+    elif SELECTION == "sorted":
+        peaks = sorted(enumerate(spectrum), key=lambda x: x[1], reverse=True)
+        if len(peaks):
+            assert peaks[0][0] == 0, \
+                "First frequency has amplitude %g. The %d. Frequency has max amplitude %g" % (spectrum[0], peaks[0][0] + 1, peaks[0][1])
+            peaks = peaks[1:]  # removing first frequency, as it is always the maximum
+        if n_peaks:
+            peaks = peaks[:n_peaks]
+
+        return [p[0] for p in peaks]
