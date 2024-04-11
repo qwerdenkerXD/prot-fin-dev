@@ -1,0 +1,4 @@
+Filename,Median_Hits,Average_Hits,Self_Matches,Unique_Self_Matches
+../results/incl_ampl_1bit.summary.csv,2.0,161.39,217,98
+../results/incl_ampl_2bit.summary.csv,1.0,1.38,217,199
+../results/test_selection.summary.csv,807.0,756.66,217,0

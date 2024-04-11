@@ -19,7 +19,7 @@ Hashes = Dict[Hash, HashOccurence]
 Scores = List[Tuple[ProteinID, Tuple[WindowIndex, Score, JSI]]]
 Database = Dict[Hash, List[HashOccurence]]
 ProteinLookup = Dict[ProteinID, Tuple[str, int]]
-ConstellationMap = List[Tuple[WindowIndex, float]]
+ConstellationMap = List[Tuple[WindowIndex, float, float]]
 
 
 def verify_type(var, ty) -> bool:

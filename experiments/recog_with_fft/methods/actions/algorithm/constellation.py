@@ -78,7 +78,7 @@ def stft_to_constellation(
 
         for peak in peaks:
             frequency = frequencies[peak]
-            constellation_map.append([window_idx, frequency])
+            constellation_map.append([window_idx, frequency, spectrum[peak]])
 
     return constellation_map
 

@@ -1,4 +1,7 @@
 from tools import *
+from os import environ as env
+
+AMPLITUDE_BITS = int(env.get("BITS", 0))
 
 
 def create_hashes(
@@ -28,12 +31,12 @@ def create_hashes(
 
     hashes: Hashes = {}
     FREQUENCY_BITS = 10
-    DIFFERENCE_BITS = 12
+    DIFFERENCE_BITS = 12 - AMPLITUDE_BITS
 
     # Iterate through the constellation map
-    for idx, (index, freq) in enumerate(constellation_map):
+    for idx, (index, freq, weight) in enumerate(constellation_map):
         # Iterate through the next pairs to produce combinatorial hashes
-        for other_index, other_freq in constellation_map[idx:]:
+        for other_index, other_freq, other_weight in constellation_map[idx:]:
             diff = other_index - index
 
             # If the index difference between the pairs is too small,
@@ -41,8 +44,26 @@ def create_hashes(
             if diff <= 1 or diff >= 2 ** DIFFERENCE_BITS:
                 continue
 
+            ampl = None
+            if AMPLITUDE_BITS == 1:
+                ampl = weight < other_weight
+            elif AMPLITUDE_BITS == 2:
+                if weight < 0.5 * other_weight:
+                    ampl = 0
+                elif weight < other_weight:
+                    ampl = 1
+                elif weight > 1.5 * other_weight:
+                    ampl = 3
+                else:
+                    ampl = 2
+
             # Produce a 32 bit hash
-            hash_: Hash = create_hash((diff, DIFFERENCE_BITS), (other_freq, FREQUENCY_BITS), (freq, FREQUENCY_BITS))
+            hash_: Hash = create_hash(
+                (ampl, AMPLITUDE_BITS),
+                (diff, DIFFERENCE_BITS),
+                (other_freq, FREQUENCY_BITS),
+                (freq, FREQUENCY_BITS)
+            )
             hashes[hash_] = (index, prot_id)
     return hashes
 
@@ -51,15 +72,16 @@ def create_hash(*args) -> Hash:
     hash_: Hash = 0
     bits = 0
     for val, shift in args:
-        assert int(val) < 2 ** shift, "%s too big for %s bit" % (val, shift)
+        if shift:
+            assert int(val) < 2 ** shift, "%s too big for %s bit" % (val, shift)
 
-        # move bits to the left to make space for the next value
-        hash_ <<= shift
+            # move bits to the left to make space for the next value
+            hash_ <<= shift
 
-        # insert the value's bits
-        hash_ |= int(val)
+            # insert the value's bits
+            hash_ |= int(val)
 
-        bits += shift
+            bits += shift
     assert bits == 32, "Hash exceeds 32 bit"
 
     return hash_
