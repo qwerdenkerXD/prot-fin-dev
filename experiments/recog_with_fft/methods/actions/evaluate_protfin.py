@@ -3,6 +3,7 @@ from tools import ProteinID, JSI, Score
 from tools import pd_read_chunkwise
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
 import re
 
 
@@ -34,7 +35,7 @@ def evaluate_protfin(protfin_out_file: str):
     """
 
     # data will be collected into a dataframe
-    evaluation = pd.DataFrame(columns=["Sample_ID", "First_Match_Count", "Sample_In_First_Matches", "Sequence_Length", "Sample_Hashes", "Sample_JSI", "Sample_Score", "Top_JSI", "Top_Score", "Median_Score_Input_Family", "Mean_Score_Input_Family", "Median_Score_Not_Input_Family", "Mean_Score_Not_Input_Family"])
+    evaluation = pd.DataFrame(columns=["Sample_ID", "First_Match_Count", "Sample_In_First_Matches", "Sequence_Length", "Sample_Hashes", "Sample_JSI", "Sample_Score", "Top_JSI", "Top_Score", "F1_Score"])
     for matches in pd_read_chunkwise(protfin_out_file):
         if matches.size:
             input_sample = matches["Input_Protein_ID"].iloc[0]
@@ -46,10 +47,12 @@ def evaluate_protfin(protfin_out_file: str):
                 other_fams = tuple(map(lambda x: x.split(".", 1)[0], other.split("|")))
                 return any(input_fam in other_fams for input_fam in input_fams)
 
-            same_family = matches["Match_Family"].apply(same_fam)
-            score = matches[["JSI", "Score"]].apply(lambda x: x[0] * x[1], axis=1)
-            same = score[same_family]
-            not_same = score[~same_family]
+            positives = int(len(matches.index) * .05) + 1
+            true_positives = matches.loc[:positives, "Match_Family"].apply(same_fam).sum()
+            precision = true_positives / positives
+            false_negatives = matches.loc[positives+1:, "Match_Family"].apply(same_fam).sum()
+            recall = true_positives / (true_positives + false_negatives)
+            f1_score = (2 * precision * recall) / (precision + recall)
 
             # insert the data into the dataframe
             evaluation.loc[len(evaluation.index)] = (
@@ -62,10 +65,7 @@ def evaluate_protfin(protfin_out_file: str):
                 sample_result["Score"].iloc[0],  # Sample_Score
                 matches[matches["Rank"] == 1]["JSI"].max(),  # Top_JSI
                 matches[matches["Rank"] == 1]["Score"].max(),  # Top_Score
-                same.median(),  # Median_Score_Input_Family
-                same.mean(),  # Mean_Score_Input_Family
-                not_same.median(),  # Median_Score_Not_Input_Family
-                not_same.mean()  # Mean_Score_Not_Input_Family
+                f1_score
             )
 
     # write to stdout

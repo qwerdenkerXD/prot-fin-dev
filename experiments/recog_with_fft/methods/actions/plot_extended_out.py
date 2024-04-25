@@ -12,6 +12,7 @@ def plot_extended_out(ext_out: str, plot_out: str):
     for i, sample in enumerate(pd_read_chunkwise(ext_out), 1):
         if sample.size:
             score = sample[["JSI", "Score"]].apply(lambda x: x[0] * x[1], axis=1)
+            score /= score.max()
             plt.boxplot(score, positions=[i], showfliers=False, widths=.8)
 
             input_fams = tuple(map(lambda x: x.split(".", 1)[0], sample["Input_Family"].iloc[0].split("|")))
@@ -33,5 +34,5 @@ def plot_extended_out(ext_out: str, plot_out: str):
     plt.ylabel("JSI $\\cdot$ Score")
     plt.legend(loc="upper left", handles=(Patch(color="red", label="match not in family"), Patch(color="green", label="match in family")))
     plt.title("Found matches for different samples")
-    plt.ylim(0, 6000)
+    plt.ylim(0, 1.1)
     plt.savefig(plot_out, bbox_inches='tight')
