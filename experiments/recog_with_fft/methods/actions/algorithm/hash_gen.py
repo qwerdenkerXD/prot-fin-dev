@@ -1,4 +1,6 @@
 from tools import *
+import numpy as np
+from os import environ as env
 
 
 def create_hashes(
@@ -28,16 +30,25 @@ def create_hashes(
     hashes: Hashes = {}
     FREQUENCY_BITS = 5
     DIFFERENCE_BITS = 12
+    AMPL_BITS = int(env.get("BITS", 0))
 
     # Iterate through the constellation map
     for idx, freqs in enumerate(constellation_map):
         occ = (idx, prot_id)
         # Iterate through the next pairs to produce combinatorial hashes
         for diff, other_freqs in enumerate(constellation_map[idx + 1:idx + 2**DIFFERENCE_BITS]):
-            for freq, _ in freqs:
-                for other_freq, _ in other_freqs:
+            for freq, ampl in freqs:
+                for other_freq, other_ampl in other_freqs:
+                    ampl_cmp = 0 if not AMPL_BITS else int(np.true_divide(ampl, other_ampl/AMPL_BITS))
+                    if ampl_cmp >= 2**AMPL_BITS:
+                        ampl_cmp = 2**AMPL_BITS-1
                     # Produce a 32 bit hash
-                    hash_: Hash = create_hash((diff, DIFFERENCE_BITS), (other_freq, FREQUENCY_BITS), (freq, FREQUENCY_BITS))
+                    hash_: Hash = create_hash(
+                        (ampl_cmp, AMPL_BITS),
+                        (diff, DIFFERENCE_BITS),
+                        (other_freq, FREQUENCY_BITS),
+                        (freq, FREQUENCY_BITS)
+                    )
                     hashes[hash_] = occ
     return hashes
 
