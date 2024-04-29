@@ -89,12 +89,11 @@ def stft_to_constellation(
 
 
 def find_peaks(spectrum: np.ndarray, n_peaks: int) -> List[int]:
-    # prominence=0 includes all peaks, but weights their prominence as well
-    peaks, props = signal.find_peaks(spectrum, prominence=0)
-
     # Only want the most prominent peaks
-    peaks: List[Tuple[int, int]] = sorted(zip(props["prominences"], peaks), reverse=True)
-    if n_peaks:
-        peaks = peaks[:n_peaks]
+    peaks: List[Tuple[int, int]] = sorted(enumerate(spectrum), key=lambda x: x[1], reverse=True)
+    assert peaks[0][0] == 0
 
-    return [p[1] for p in peaks]
+    if n_peaks:
+        peaks = peaks[1:n_peaks+1]
+
+    return [p[0] for p in peaks]

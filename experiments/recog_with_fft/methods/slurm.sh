@@ -4,12 +4,12 @@ function sbatch_script() {
     echo "#!/bin/bash -l
 
 # name
-#SBATCH --job-name=WINSIZE_$3_NPEAKS_$4
+#SBATCH --job-name=peaksel_WINSIZE_$3_NPEAKS_$4
 
 # cpu
 #SBATCH --ntasks=1
 
-#SBATCH --mem-per-cpu=10GB
+#SBATCH --mem-per-cpu=2GB
 
 #SBATCH --output=../results/${exp}/_logs/%x_%j_slurm.out
 #SBATCH --error=../results/${exp}/_logs/%x_%j_slurm.err
@@ -36,12 +36,12 @@ done
 "
 }
 
-exp=v0.3_stft_param_exp
+exp=_v0.3-exp-peak_selection
 mkdir ../results/${exp}
 mkdir ../results/${exp}/_logs
 python3 evaluation.py select-samples $2 $1 -s 7 > ../results/${exp}/_test_selection.fa
 for (( window_size=10; window_size <= 50; window_size+=10 )); do
-    for peaks in 5 3 0; do
+    for peaks in 5 3; do
         sbatch --chdir . <(sbatch_script $1 $2 $window_size $peaks)
     done
 done
