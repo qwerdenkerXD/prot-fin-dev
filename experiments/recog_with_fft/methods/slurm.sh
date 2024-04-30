@@ -36,7 +36,7 @@ done
 "
 }
 
-exp=v0.3_stft_param_exp
+exp=_v0.3_stft_param_exp
 mkdir ../results/${exp}
 mkdir ../results/${exp}/_logs
 python3 evaluation.py select-samples $2 $1 -s 7 > ../results/${exp}/_test_selection.fa
