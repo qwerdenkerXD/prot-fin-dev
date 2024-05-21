@@ -62,13 +62,17 @@ class TestHashGen(TestCase):
 
         const_map = self.create_valid(
             ConstellationMap,
-            [((0, 0.),), ((0, 0.),)]
+            [((0, 0., 0),), ((0, 0., 0),)]
         )
         hashes = self.create_valid(
             Hashes,
-            create_hashes(const_map, ProteinID())
+            create_hashes(const_map, ProteinID(), 0)
         )
-        self.assertEqual(len(hashes), 1, "Expected exactly one created hash")
-        expected_hash = Hash(0)  # diff is 0, freqs are 0 -> 0
-        self.assertIn(expected_hash, hashes, "Wrong hash")
-        self.assertEqual(hashes[expected_hash], (0, ProteinID()))
+        self.assertEqual(len(hashes), 2, "Expected exactly two created hash")
+        expected_hashes = (
+            Hash(0),  # diff is 0, freqs are 0, factor is 0, quantiles are 0 -> 0
+            Hash(2 ** FREQUENCY_BITS - 1 << FREQUENCY_BITS),  # last frequency will be combined with dummy, as there are no upcoming ones
+        )
+        for i, expected_hash in enumerate(expected_hashes):
+            self.assertIn(expected_hash, hashes, "Wrong hash")
+            self.assertEqual(hashes[expected_hash], (i, ProteinID()))

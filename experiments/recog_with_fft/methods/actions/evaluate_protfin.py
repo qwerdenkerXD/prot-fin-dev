@@ -46,10 +46,10 @@ def evaluate_protfin(protfin_out_file: str):
                 other_fams = tuple(map(lambda x: x.split(".", 1)[0], other.split("|")))
                 return any(input_fam in other_fams for input_fam in input_fams)
 
-            positives = int(len(matches.index) * .05) + 1
-            true_positives = matches.loc[:positives, "Match_Family"].apply(same_fam).sum()
-            precision = true_positives / positives
-            false_negatives = matches.loc[positives+1:, "Match_Family"].apply(same_fam).sum()
+            positives = matches["Rank"] <= int(len(matches.index) * .05) + 1
+            true_positives = matches["Match_Family"][positives].apply(same_fam).sum()
+            precision = true_positives / positives.sum()
+            false_negatives = matches["Match_Family"][~positives].apply(same_fam).sum()
             recall = true_positives / (true_positives + false_negatives) if true_positives + false_negatives else 0
             f1_score = (2 * precision * recall) / (precision + recall) if precision + recall else 0
 

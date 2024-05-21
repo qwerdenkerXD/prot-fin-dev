@@ -1,5 +1,6 @@
 materials/*.fa
 materials/mapman*
+experiments/recog_with_fft/results/_v0.4-exp-uniref_sampling/*
 
 **/.*
 **/_*
@@ -7,3 +8,5 @@ materials/mapman*
 
 !.gitignore
 !**/__init__.py
+!experiments/recog_with_fft/results/_v0.4-exp-uniref_sampling
+!experiments/recog_with_fft/results/_v0.4-exp-uniref_sampling/sample*.csv

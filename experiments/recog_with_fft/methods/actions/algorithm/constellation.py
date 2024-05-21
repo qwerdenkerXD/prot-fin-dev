@@ -2,6 +2,7 @@ from scipy import signal
 import numpy as np
 from tools import *
 from os import environ as env
+import pandas as pd
 
 # parameters for the STFT
 WINDOW_SIZE = int(env.get("WINDOW_SIZE", 30))
@@ -9,6 +10,11 @@ WINDOW_TYPE = env.get("WINDOW_TYPE", ["boxcar", "triang", "blackman", "hamming",
                                      [0])
 OVERLAP = int(env.get("OVERLAP", 15))
 N_PEAKS = int(env.get("N_PEAKS", 0))  # 0 means all
+
+AMPL_QUANTILES = {
+    i: pd.read_csv(f"../results/_v0.4-exp-uniref_sampling/sample_WINSIZE_{i}.csv", sep=",", usecols=["5%%-Quantile", "95%%-Quantile"]).rename(columns={"5%%-Quantile": 5, "95%%-Quantile": 95})
+    for i in range(10, 101, 10)
+}
 
 
 def create_constellation(
@@ -47,8 +53,6 @@ def create_constellation(
     """
 
     # adjust window size and overlap if invalid
-    if len(aa_vec) < window_size:
-        window_size = len(aa_vec)
     if overlap >= window_size:
         overlap = window_size - 1
 
@@ -79,11 +83,14 @@ def stft_to_constellation(
 
         # get rid of complex values to make them comparable
         spectrum: np.ndarray = abs(amplitudes)
+        positive = np.argwhere(spectrum > AMPL_QUANTILES[WINDOW_SIZE][95]).flatten()
+        negative = np.argwhere(spectrum < AMPL_QUANTILES[WINDOW_SIZE][5]).flatten()
 
-        # find peaks
-        peaks: List[int] = find_peaks(spectrum, n_peaks)
+        for i, filt in enumerate((negative, positive)):
+            # find peaks
+            peaks: List[int] = find_peaks(spectrum[filt], n_peaks)
 
-        constellation_map.append(tuple((peak, float(spectrum[peak])) for peak in peaks))
+            constellation_map.append(tuple((int(filt[peak]), float(spectrum[filt][peak]), i) for peak in peaks))
 
     return constellation_map
 

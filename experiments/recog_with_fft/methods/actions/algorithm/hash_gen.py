@@ -6,7 +6,8 @@ DIFFERENCE_BITS = 12
 
 def create_hashes(
         constellation_map: ConstellationMap,
-        prot_id: ProteinID
+        prot_id: ProteinID,
+        kidera_factor: int
         ) -> Hashes:
     """
     Creates combinatorial Hashes from a constellation map for efficient
@@ -34,12 +35,19 @@ def create_hashes(
     for idx, freqs in enumerate(constellation_map):
         occ = (idx, prot_id)
         # Iterate through the next pairs to produce combinatorial hashes
-        for diff, other_freqs in enumerate(constellation_map[idx + 1:idx + 2**DIFFERENCE_BITS]):
-            for freq, _ in freqs:
-                for other_freq, _ in other_freqs:
+        for freq, _, quantile in freqs:
+            hash_count = len(hashes)
+            for diff, other_freqs in enumerate(constellation_map[idx + 1:idx + 2**DIFFERENCE_BITS]):
+                for other_freq, _, other_quantile in other_freqs:
                     # Produce a 32 bit hash
-                    hash_: Hash = create_hash((diff, DIFFERENCE_BITS), (other_freq, FREQUENCY_BITS), (freq, FREQUENCY_BITS))
+                    hash_: Hash = create_hash((kidera_factor, 4), (quantile, 1), (other_quantile, 1), (diff, DIFFERENCE_BITS), (other_freq, FREQUENCY_BITS), (freq, FREQUENCY_BITS))
                     hashes[hash_] = occ
+            if len(hashes) == hash_count:  # -> no hashes created for the quantile's frequency -> combining with foo frequency
+                other_freq = 2 ** FREQUENCY_BITS - 1
+                other_quantile = 0
+                diff = 0
+                hash_: Hash = create_hash((kidera_factor, 4), (quantile, 1), (other_quantile, 1), (diff, DIFFERENCE_BITS), (other_freq, FREQUENCY_BITS), (freq, FREQUENCY_BITS))
+                hashes[hash_] = occ
     return hashes
 
 

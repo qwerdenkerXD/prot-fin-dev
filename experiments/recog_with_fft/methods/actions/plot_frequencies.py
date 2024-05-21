@@ -60,7 +60,7 @@ def _process(args) -> Dict[float, Tuple[int, int]]:
         constellation_map = create_constellation(get_aa_vector(seq))
         all_freqs = set()
         for window in constellation_map:
-            for freq_idx, _ in window:
+            for freq_idx, _, _ in window:
                 freq = FREQS[freq_idx]
                 freq_count, prot_count = selected_freqs[freq]
                 selected_freqs[freq] = (freq_count + 1, prot_count)

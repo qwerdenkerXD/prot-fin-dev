@@ -4,7 +4,9 @@ from sys import argv as args
 import re
 
 res = pd.DataFrame(columns=[
-    "Filename",
+    "Window_Size",
+    "N_Peaks",
+    "Overlap",
     "Median_Hits",
     "Average_Hits",
     "Self_Matches",
@@ -15,7 +17,7 @@ res = pd.DataFrame(columns=[
 for file in args[1:]:
     summary = pd.read_csv(file)
     res.loc[len(res.index)] = (
-        file,
+        *re.findall('WINSIZE_(\d+)_NPEAKS_(\d+)_OVERLAP_(\d+)',file)[0],
         summary["First_Match_Count"].median(),
         round(summary["First_Match_Count"].mean(), 2),
         (summary["Sample_In_First_Matches"]).sum(),

@@ -1,10 +1,9 @@
-# Recognition with Fast Fourier Transformation
+# Recognition with Fast Fourier Transformation <br> v0.4-exp-uniref_sampling
 `NOTE: This README and the code are updated synchronously.`
 
-The concept of this experiment is to generate a vector of values from an amino acid sequence, using one factor of [the table of Kidera factors](../../materials/Amino_Acid_Kidera_Factors.csv), for now. These factors represent the 10 most identifying features of amino acids.<br>
-With doing a Short Time Fourier Transformation (STFT) on the created vector, it is now possible to find structual features in the sequence to create a specific constellation of them.
+This experiment is to increase specificity in peak selection. To select peaks with amplitudes that are significantly high or low for a specific kidera factor, millions of random windows will be sampled and calculated to identify these amplitudes.
 
-Now, instead of looking on text-based likelihood, the goal is to identify a protein by its own sequence from this constellation, so it needs to be unique like a fingerprint, but still similar to related sequences of the same family and less similar to others.
+The goal is to stop inflating the database with frequent hashes.
 
 ---
 
@@ -51,110 +50,6 @@ cd methods
 TQDM_DISABLE=1 python3 test.py
 ```
 
-
-## Experiments
-<ul>
-    <li><b>Current</b>
-        <ul>
-            <li>
-                <details>
-                    <summary><code>v0.3-exp-stft_params</code> - Redoing <code>v0.1-exp-stft_params</code> because of a previous bug: <a href="https://github.com/usadellab/prot-fin/blob/v0.3-exp-stft_params/experiments/recog_with_fft">go to branch</a></summary>
-                    The creation of the constellation map is based on the STFT.<br>
-                    To increase the accuracy of the recognition algorithm, it is very important to optimize the parameters to generate the most effective constellation map for a protein.
-                    <br><br>
-                    Therefore, window size, overlap and number of selected peaks are passed to <code>prot-fin</code>.<br>
-                    As every configuration of parameters needs a custom database, this procedure is done in parallel on a compute cluster.<br>
-                    The results of each recognition process are summarized in <a href="https://github.com/usadellab/prot-fin/blob/v0.3-exp-stft_params/experiments/recog_with_fft/results/summary.csv">summary.csv</a>.
-                    <br><br>
-                    The results don't differ too much in their F1-scoring, but when treating it as significant, higher overlap and window sizes lead to better results.
-                </details>
-            </li>
-            <li>
-                <details>
-                    <summary><code>v0.3-exp-hashed_amplitudes</code> - Redoing <code>v0.2-exp-hashed_amplitudes</code> because of a previous bug: <a href="https://github.com/usadellab/prot-fin/blob/v0.3-exp-hashed_amplitudes/experiments/recog_with_fft">go to branch</a></summary>
-                    The recognition of proteins in protfin is based on hashes.<br>
-                    Currently, hashes are created of STFT frequency pairs and the distance between them in the constelllation map.<br>
-                    Including the STFT amplitudes could increase the hashes' quality, as they store more information then.
-                    <br><br>
-                    Therefore, the amplitudes will be included in hash generation as the result of the comparisons between the amplitudes of the frequency pairs that are included in a hash.<br>
-                    So the amplitudes take only a few bits, as the full values may lead to overfitting.
-                    <br><br>
-                    Looking at <a href="https://github.com/usadellab/prot-fin/blob/v0.3-exp-hashed_amplitudes/experiments/recog_with_fft/results/summary.csv">summary.csv</a>, it seems that the amplitude information really improves the accuracy.<br>
-                    The more bits for amplitude are used, the better the F1-Score. May be something to keep in mind. Currently, the performance is bad.
-                </details>
-            </li>
-            <li>
-                <details>
-                    <summary><code>v0.3-exp-peak_selection</code> - Redoing <code>v0.2-exp-peak_selection</code> because of a previous bug: <a href="https://github.com/usadellab/prot-fin/blob/v0.3-exp-peak_selection/experiments/recog_with_fft">go to branch</a></summary>
-                    To create hashes from a STFT, only a subset of frequencies is selected to be included in the hash generation.<br>
-                    Currently, the <code>scipy.signal.find_peaks</code> function is used to select the local maxima only. But in case of protein sequences instead of music, this may not be that useful, as the maxima's neighbors could be still relevant for identification of familiar proteins.
-                    <br><br>
-                    Therefore, an alternative way of selection is going to be developed. The current approach is to just sort the frequencies by their amplitudes descending and select the first ones.
-                    <br><br>
-                    The results don't differ that much from previous selection, as <a href="https://github.com/usadellab/prot-fin/blob/v0.3-exp-peak_selection/experiments/recog_with_fft/results/summary.csv">summary.csv</a> shows.<br>
-                    The average match count is lower, but not that much. Further analysises necessary.
-                </details>
-            </li>
-        </ul>
-    </li>
-    <li><details><summary><b>Previous</b></summary>
-        <ul>
-            <li>
-                <details>
-                    <summary><code>v0.1-exp-stft_params</code> - Trying different parameters for the STFT to fit the best: <a href="https://github.com/usadellab/prot-fin/blob/v0.1-exp-stft_params/experiments/recog_with_fft">go to branch</a></summary>
-                    The creation of the constellation map is based on the STFT.<br>
-                    To increase the accuracy of the recognition algorithm, it is very important to optimize the parameters to generate the most effective constellation map for a protein.
-                    <br><br>
-                    Therefore, window size, overlap and number of selected peaks are passed to <code>prot-fin</code>.<br>
-                    As every configuration of parameters needs a custom database, this procedure is done in parallel on a compute cluster.<br>
-                    The results of each recognition process are summarized in <a href="https://github.com/usadellab/prot-fin/blob/v0.1-exp-stft_params/experiments/recog_with_fft/results/stft_param_exp.summary.csv">stft_param_exp.summary.csv</a>.
-                    <br><br>
-                    It looks like that the maximum overlap (so hop size of 1) is the best option for accuracy.<br>
-                    Currently, for window size and selected peaks are further analyses necessary.
-                </details>
-            </li>
-            <li>
-                <details>
-                    <summary><code>v0.2-exp-hash_analysises</code> - Analyzing the generated hashes: <a href="https://github.com/usadellab/prot-fin/blob/v0.2-exp-hash_analysises/experiments/recog_with_fft">go to branch</a></summary>
-                    The recognition of proteins in protfin is based on hashes.<br>
-                    To increase the accuracy of the recognition algorithm, a high quantity and quality of hashes is of interest.<br>
-                    To understand how to improve both efficiently, is the purpose of this experiment.
-                    <br><br>
-                    Therefore, hash counts and their components will be analyzed.
-                    <br><br>
-                    Currently, there are very many unused hashes that are just ignored, as <a href="https://github.com/usadellab/prot-fin/blob/v0.2-exp-hash_analysises/experiments/recog_with_fft/results/potential_hashes.png">potential_hashes.png</a> implies.
-                </details>
-            </li>
-            <li>
-                <details>
-                    <summary><code>v0.2-exp-hashed_amplitudes</code> - Analyzing the influence of STFT amplitudes included in hashes: <a href="https://github.com/usadellab/prot-fin/blob/v0.2-exp-hashed_amplitudes/experiments/recog_with_fft">go to branch</a></summary>
-                    The recognition of proteins in protfin is based on hashes.<br>
-                    Currently, hashes are created of STFT frequency pairs and the distance between them in the constelllation map.<br>
-                    Including the STFT amplitudes could increase the hashes' quality, as they store more information then.
-                    <br><br>
-                    Therefore, the amplitudes will be included in hash generation as the result of the comparisons between the amplitudes of the frequency pairs that are included in a hash.<br>
-                    So the amplitudes take only a few bits, as the full values may lead to overfitting.
-                    <br><br>
-                    Using 1 or 2 bits seems to work good enough, as <a href="https://github.com/usadellab/prot-fin/blob/v0.2-exp-hashed_amplitudes/experiments/recog_with_fft/results/summary.csv">summary.csv</a> implies.<br>
-                    Currently, only the first rank of matches is analyzed to see if the original match was identified. The other related matches need to be checked on familiarity concerning their mapman bins.
-                </details>
-            </li>
-            <li>
-                <details>
-                    <summary><code>v0.2-exp-peak_selection</code> - Analyzing the peak selection method in STFT: <a href="https://github.com/usadellab/prot-fin/blob/v0.2-exp-peak_selection/experiments/recog_with_fft">go to branch</a></summary>
-                    To create hashes from a STFT, only a subset of frequencies is selected to be included in the hash generation.<br>
-                    Currently, the <code>scipy.signal.find_peaks</code> function is used to select the local maxima only. But in case of protein sequences instead of music, this may not be that useful, as the maxima's neighbors could be still relevant for identification of familiar proteins.
-                    <br><br>
-                    Therefore, an alternative way of selection is going to be developed. The current approach is to just sort the frequencies by their amplitudes descending and select the first ones.
-                    <br><br>
-                    The difference for 5 selected peaks doesn't seem that big, as <a href="https://github.com/usadellab/prot-fin/blob/v0.2-exp-peak_selection/experiments/recog_with_fft/results/summary.csv">summary.csv</a> shows.<br>
-                    The average match count is lower, but not that much. Further analysises necessary.
-                </details>
-            </li>
-        </ul>
-    </details></li>
-</ul>
-
 ## Methods (`methods/*`)
 <ul>
     <li>
@@ -179,24 +74,26 @@ TQDM_DISABLE=1 python3 test.py
                     <td>
                         <ul><li>defaults: <code>n_peaks=0</code>, <code>window="boxcar"</code>, <code>overlap@kwargs=window_size//2</code></li></ul>
                         <ol type="1">
-                            <li>Initialize values: equalize <code>window_size</code> to <code>aa_vec</code> if it is greater than the vector size, also set <code>overlap=window_size-1</code> if it is bigger than window size</li>
+                            <li>Initialize values: set <code>overlap=window_size-1</code> if it is bigger than window size</li>
                             <li>If input sequence is shorter than window size, return empty map</li>
                             <li>Do a STFT on <code>aa_vec</code> with the given parameters</li>
-                            <li>for each STF-transformed window, get the n most prominent peaks as set by <code>n_peaks</code> or select all if <code>n_peaks=0</code></li>
-                            <li>append all tuples of peak and its amplitude as selected by <code>find_peaks</code> as one whole tuple to the constellation map, so one tuple per window with all its frequencies</li>
+                            <li>for each STF-transformed window filter the amplitudes by the quantiles calculated in the sampling experiment</li>
+                            <li>for each filtered amplitudes, get the n most prominent peaks as set by <code>n_peaks</code> or select all if <code>n_peaks=0</code></li>
+                            <li>append all triples of peak (frequency index), its amplitude and quantile as one whole n-tuple to the constellation map, so one n-tuple per window with all its frequencies</li>
                         </ol>
                     </td>
                 </tr>
                 <tr>
-                    <td>actions.algorithm.hash_gen:<br><code>create_hashes(constellation_map, prot_id)</code></td>
+                    <td>actions.algorithm.hash_gen:<br><code>create_hashes(constellation_map, prot_id, kidera_factor)</code></td>
                     <td>
                         <ol type="1">
                             <li>
-                                for each frequency in each window in the map create combinatorial hashes (anker points) with all upcoming frequencies in the next 2<sup>12</sup> windows:<br>
-                                as frequencies use a max. of 5 bits each, the hashes are generated by combining them into a 32-bit int like: <br>
-                                <code>(zeros)-(index_diff)-(freq_of_other_pair)-(frequency)</code><br>
-                                So currently there are 10 unused bits of zeros that can be assigned in further experiments.
+                                for each frequency and its quantile in each window in the map create combinatorial hashes (anker points) with all upcoming frequencies in the next 2<sup>12</sup> windows:<br>
+                                as frequencies use a max. of 5 bits each and the quantiles 1 bit each and the kidera factor 4 bits, the hashes are generated by combining them into a 32-bit int like: <br>
+                                <code>(zeros)-(kidera_factor)-(quantile)-(other_quantile)-(index_diff)-(freq_of_other_pair)-(frequency)</code><br>
+                                So currently there are 4 unused bits of zeros that can be assigned in further experiments.
                             </li>
+                            <li>also, as the frequencies in the last window in the map doesn't have any upcoming frequencies to pair up with, they are combined with a dummy frequency that never exists (2<sup>5</sup>-1)
                             <li>save index and protein id for each hash</li>
                         </ol>
                     </td>
@@ -234,7 +131,7 @@ TQDM_DISABLE=1 python3 test.py
             <h3>Convenience</h3>
             <code>actions.algorithm.hashes_from_seq(seq, prot_id)</code>
             <ul>
-                <li>just the workflow <code>seq_to_vectors</code> $\rightarrow$ <code>create_constellation</code> $\rightarrow$ <code>create_hashes</code></li>
+                <li>just the workflow <code>seq_to_vectors</code> $\rightarrow$ <code>create_constellation</code> $\rightarrow$ <code>create_hashes</code> for all kidera factors</li>
             </ul>
             <code>tools.Fasta(fasta_file)</code>
             <ul>
@@ -332,49 +229,49 @@ TQDM_DISABLE=1 python3 test.py
     <li><code>extend_protfin_out.awk</code> - A script to extend the protfin output with two columns for the match related mapman bins</li>
     <li><code>raincloud_plot.R</code> - A script to plot groups of values into a raincloud plot</li>
     <li><code>summary.py</code> - A script to summarize the output of <code>evaluation.py eval</code></li>
+    <li><code>eval_times.py</code> - A script to fetch the durations for database creation</li>
 </ul>
 
 ---
 ## Results (`results/*`)
 |                          file                            |     content
 |----------------------------------------------------------|------------------
-|[test_selection.summary.csv](./results/test_selection.summary.csv)|a summary of the found matches for 217 protein sequences (7 per family)
-|[summary.csv](./results/summary.csv)|a summary of the `*.summary.csv` files
-|[hash_count_dist.png](./results/hash_count_dist.png)|a raincloud plot of the hash counts calculated for the sequences
+|[\_v0.4-exp-uniref_sampling/sample_WINSIZE_\*.csv](./results/_v0.4-exp-uniref_sampling)|the interim results of the sampling
+|[summary.csv](./results/summary.csv)|a summary of the `_v0.4-exp-uniref_sampling/*.summary.csv` files
 |[frequencies.png](./results/frequencies.png)|A scatter plot of the frequences that are included in constellation maps
-|[matches.png](./results/matches.png)|A scattered box plot of the found matches per protein, with focus on family relatives
-|[prots_per_hash.png](./results/prots_per_hash.png)|A raincloud plot of the protein counts that share the same hash
-|[prots_per_windist.png](./results/prots_per_windist.png)|A boxplot of the protein counts per hash, grouped by the hash's window distance
+|[runtimes_createdb.csv](./results/runtimes_createdb.csv)|The durations for creating the databases, plus the databases' sizes
 
 ### Reproduce
 In this repository, `protein.fa` is used to generate the database. You can extract the file from [this archive](https://github.com/usadellab/prot-fin/raw/5be77c4247327e3958c89200c03a938ec4734834/material/Mapman_reference_DB_202310.tar.bz2). The archive also includes `mapmanreferencebins.results.txt` which maps the proteins to their families.
 
 The used table of Kidera factors is located in [../../materials/Amino_Acid_Kidera_Factors.csv](../../materials/Amino_Acid_Kidera_Factors.csv) and was generated by [this R-script](https://github.com/usadellab/prot-fin/blob/5be77c4247327e3958c89200c03a938ec4734834/methods/Amino_Acid_Kidera_Factors.R). (Read the [root-README](../../README.md) for more details).
 
-[test_selection.summary.csv](./results/test_selection.summary.csv):
+[\_v0.4-exp-uniref_sampling/sample_WINSIZE_\*.csv](./results):
+```diff
+- keep in mind that this exact reproduction needs good timing
+- or modifing the uniref_sampling.py to stop after the
+- specific sample counts as logged in sample_WINSIZE_*.csv
+```
 ```sh
-cd methods
-materials=../../../materials
-python3 protfin.py create-db -c 6 $materials/protein.fa
-python3 evaluation.py select-samples $materials/mapmanreferencebins.results.txt $materials/protein.fa -s 7 > ../results/_test_selection.fa
-python3 protfin.py find-matches ../results/_test_selection.fa > ../results/_test_selection.matches
-awk -v protfin_out=../results/_test_selection.matches -f extend_protfin_out.awk ../../../materials/mapmanreferencebins.results.txt > ../results/_test_selection.matches.extended
-python3 evaluation.py eval ../results/_test_selection.matches.extended > ../results/test_selection.summary.csv
+bash slurm.sh /media/BioNAS/UniProtKB/20240408/uniref90.fasta
+# wait about a day
+bash plot.sh
 ```
 
-[summary.csv](./results/summary.csv):
+[summary.csv](./results/summary.csv) and [runtimes_createdb.csv](./results/runtimes_createdb.csv):
+```diff
+- requires _v0.4-exp-uniref_sampling/sample_WINSIZE_*.csv
+```
 ```sh
 cd methods
+bash protfin_slurm.sh ../../../materials/protein.fa ../../../materials/mapmanreferencebins.results.txt
+```
+```diff
+- wait until all jobs are finished, except the ones for window size 50 and overlap 49, cancel these
+```
+```sh
+bash eval_times.sh > ../results/runtimes_createdb.csv
 python3 summary.py ../results/*.summary.csv > ../results/summary.csv
-```
-
-[hash_count_dist.png](./results/hash_count_dist.png):
-```sh
-cd methods
-materials=../../../materials
-python3 protfin.py create-db -c 6 $materials/protein.fa
-TITLE="Distribution of sequences' hash counts" X_LABEL="Hash counts" \
-Rscript raincloud_plot.R normal <(python3 evaluation.py print-hash-counts database.pickle) ../results/hash_count_dist.png
 ```
 
 [frequencies.png](./results/frequencies.png):
@@ -384,42 +281,15 @@ materials=../../../materials
 python3 evaluation.py plot-frequencies -c 6 $materials/protein.fa ../results/frequencies.png
 ```
 
-[matches.png](./results/matches.png):
-```sh
-cd methods
-materials=../../../materials
-python3 protfin.py create-db -c 6 $materials/protein.fa
-python3 evaluation.py select-samples $materials/mapmanreferencebins.results.txt $materials/protein.fa -s 7 > ../results/_test_selection.fa
-python3 protfin.py find-matches ../results/_test_selection.fa > ../results/_test_selection.matches
-awk -v protfin_out=../results/_test_selection.matches -f extend_protfin_out.awk ../../../materials/mapmanreferencebins.results.txt > ../results/_test_selection.matches.extended
-python3 evaluation.py plot-extended-out ../results/_test_selection.matches.extended ../results/matches.png
-```
-
-[prots_per_hash.png](./results/prots_per_hash.png):
-```sh
-cd methods
-materials=../../../materials
-python3 protfin.py create-db -c 6 $materials/protein.fa
-TITLE="Distribution of proteins per hash" X_LABEL="Protein counts" \
-Rscript raincloud_plot_log10.R normal <(python3 evaluation.py print-prots-per-hash database.pickle) ../results/prots_per_hash.png
-```
-
-[prots_per_windist.png](./results/prots_per_windist.png):
-```sh
-cd methods
-materials=../../../materials
-python3 protfin.py create-db -c 6 $materials/protein.fa
-python3 evaluation.py plot-prots-per-windist database.pickle ../results/prots_per_windist.png
-```
-
 ---
 ## Discussion/Brainstorming
-As of <code>summary.csv</code>, the original match is mostly found. Looking into <code>test_selection.summary.csv</code> and <code>protein.fa</code>, the matches with multiple first hits have just other proteins with duplicate sequences in <code>protein.fa</code>.
-So it is actually always found.
+Compared to previous experiments, the database sizes are way lower, when having in mind that they are created for all kidera factors now.
 
-The plot of the matches in <code>matches.png</code> indicates that there is no real difference in scoring between family related and non-related proteins for an input sequence. There are some sequences with higher scores, but these are just some with high sequence similarity when inspecting the <code>protein.fa</code>.
+It seems that the number of selected peaks doesn't really matter, as the amplitudes are filtered by quantile. This makes sense, as the maximum number of local maxima is $\frac{window\_size - 2}{2}$, so for window size 20 (which seems to be very good here) it is 9. When filtering the amplitudes that extremely, there won't last many amplitudes to select a peak from.
 
 Some ideas for future development:
+ - reduce database size (still too big, should be same as input 18 MB)
+   - limit window distance appropriately (12 bits is way too much)
 
 ---
 ## Environment
