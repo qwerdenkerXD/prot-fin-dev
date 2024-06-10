@@ -1,6 +1,7 @@
-# bash hashplots_slurm.sh ../../../materials/protein.fa
+# bash protfin_slurm.sh ../../../materials/protein.fa ../../../materials/mapmanreferencebins.results.txt
 
 function sbatch_script() {
+    name=../results/${exp}/protfin_WINSIZE_${window_size}_NPEAKS_${peaks}_OVERLAP_${overlap}
     echo "#!/bin/bash -l
 
 # name
@@ -9,28 +10,23 @@ function sbatch_script() {
 # cpu
 #SBATCH --ntasks=1
 
-#SBATCH --mem-per-cpu=10GB
+#SBATCH --mem-per-cpu=15GB
 
 #SBATCH --output=../results/${exp}/_logs/%x_%j_slurm.out
 #SBATCH --error=../results/${exp}/_logs/%x_%j_slurm.err
 
-db=../results/${exp}/sample_WINSIZE_$window_size.pickle
-
-TITLE=\"Distribution of sequences' hash counts\" X_LABEL=\"Hash counts\" \
-Rscript raincloud_plot.R normal <(python3 evaluation.py print-hash-counts \$db) ../results/hash_count_dist.png
-
-python3 evaluation.py plot-frequencies -c 6 $1 ../results/frequencies.png
-
-TITLE=\"Distribution of proteins per hash\" X_LABEL=\"Protein counts\" \
-Rscript raincloud_plot_log10.R normal <(python3 evaluation.py print-prots-per-hash \$db) ../results/prots_per_hash.png
-
-python3 evaluation.py plot-prots-per-windist \$db ../results/prots_per_windist.png
+WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py create-db -p ${name}.pickle $1
+WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py find-matches -d ${name}.pickle ../results/${exp}/_test_selection.fa > ${name}.matches
+awk -v protfin_out=${name}.matches -f extend_protfin_out.awk $2 > ${name}.matches.extended
+rm ${name}.matches
+python3 evaluation.py eval ${name}.matches.extended > ${name}.summary.csv
 "
 }
 
 exp=_v0.4-exp-uniref_sampling
+python3 evaluation.py select-samples $2 $1 -s 7 > ../results/${exp}/_test_selection.fa
 
-for (( window_size=10; window_size <= 50; window_size+=10 )); do
+for (( window_size=50; window_size >= 10; window_size-=10 )); do
     declare -a overlaps=()
     declare -i overlap
     for i in 1 2 4; do

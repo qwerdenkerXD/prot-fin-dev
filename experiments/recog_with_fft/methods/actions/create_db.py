@@ -62,7 +62,7 @@ def _process(args) -> Tuple[Database, ProteinLookup]:
         hashes: Hashes = hashes_from_seq(seq, prot_id)
 
         # save the protein related data
-        protein_lookup[prot_id] = (0, len(hashes))
+        protein_lookup[prot_id] = (len(seq), len(hashes))
 
         # sort the hashes into the database by using them as key pointing to
         # their matching proteins

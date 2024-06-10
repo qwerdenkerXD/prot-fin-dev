@@ -3,6 +3,8 @@ import pandas as pd
 from tools import *
 from .algorithm import hashes_from_seq
 import pickle
+import sys
+import os
 
 Matches = List[Tuple[WindowIndex, WindowIndex]]
 ScoresByOffset = Dict[WindowIndex, Score]
@@ -22,7 +24,8 @@ COLUMNS = [
 
 def find_matches(
         fasta_file: str,
-        db_in: str
+        db_in: str,
+        filter_quantile=1.0
         ):
     """
     Find matches for the proteins defined in the FASTA file
@@ -37,11 +40,25 @@ def find_matches(
         of interest
     db_in : str
         Name of the file storing the trained database
+    filter_quantile : float
+        Quantile of hashes to be kept in database
     """
+
+    assert filter_quantile > 0 and filter_quantile <= 1
 
     # load databases
     with open(db_in, 'rb') as f:
         database, protein_lookup = pickle.load(f)
+
+    prev_size = os.path.getsize(db_in)
+
+    hash_frequencies = np.array(sorted(len(v) for v in database.values()))
+    f = np.cumsum(hash_frequencies)
+    quantile_value = hash_frequencies[np.searchsorted(f, filter_quantile * f[-1])]
+
+    database = {k: v for k, v in database.items() if len(v) <= quantile_value}
+    size_now = sys.getsizeof(pickle.dumps((database, protein_lookup), pickle.HIGHEST_PROTOCOL))
+    eprint(int(size_now / prev_size * 100), r"%", " (%.2fMB) of database size used by quantile filter" % (size_now / (1024**2)), sep="")
 
     print(*COLUMNS, sep=",")
 

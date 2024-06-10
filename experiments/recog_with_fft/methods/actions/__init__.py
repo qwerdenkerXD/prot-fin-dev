@@ -7,3 +7,5 @@ from .print_prots_per_hash import print_prots_per_hash
 from .plot_frequencies import plot_frequencies
 from .plot_extended_out import plot_extended_out
 from .plot_prots_per_windist import plot_prots_per_windist
+from .plot_hashes_per_sequence_length import plot_hashes_per_sequence_length
+from .plot_family_covering import plot_family_covering

@@ -40,10 +40,10 @@ def evaluate_protfin(protfin_out_file: str):
             input_sample = matches["Input_Protein_ID"].iloc[0]
             sample_result = matches[matches["Match_Protein_ID"] == input_sample]
 
-            input_fams = tuple(map(lambda x: x.split(".", 1)[0], str(matches["Input_Family"].iloc[0]).split("|")))
+            input_fams = str(matches["Input_Family"].iloc[0]).split("|")
 
             def same_fam(other):
-                other_fams = tuple(map(lambda x: x.split(".", 1)[0], other.split("|")))
+                other_fams = other.split("|")
                 return any(input_fam in other_fams for input_fam in input_fams)
 
             positives = matches["Rank"] <= int(len(matches.index) * .05) + 1

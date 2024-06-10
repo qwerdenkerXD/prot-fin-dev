@@ -4,7 +4,7 @@ function sbatch_script() {
     echo "#!/bin/bash -l
 
 # name
-#SBATCH --job-name=plot_uniref_sample_ca_22Mio
+#SBATCH --job-name=plot_uniref_sample_ca_150Mio
 
 # cpu
 #SBATCH --ntasks=1
@@ -14,7 +14,7 @@ function sbatch_script() {
 #SBATCH --output=../results/${exp}/_logs/%x_%j_slurm.out
 #SBATCH --error=../results/${exp}/_logs/%x_%j_slurm.err
 
-for pickle in ../results/${exp}/*.pickle
+for pickle in ../results/${exp}/sample_*.pickle
 do
     while :
     do

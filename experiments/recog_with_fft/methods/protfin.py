@@ -48,10 +48,12 @@ def get_cli():
     find_match_parser = sub_commands.add_parser("find-matches", help="Find Matches for Proteins")
     find_match_parser.add_argument("fasta-file")
     find_match_parser.add_argument("-d", "--database", default=DB_DEFAULT)
+    find_match_parser.add_argument("-f", "--filter", default=1., type=float)
     find_match_parser.set_defaults(func=lambda args:
                                    find_matches(
                                        getattr(args, "fasta-file"),
-                                       db_in=args.database
+                                       db_in=args.database,
+                                       filter_quantile=args.filter
                                    ))
 
     return parser

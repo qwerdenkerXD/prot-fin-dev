@@ -11,10 +11,20 @@ WINDOW_TYPE = env.get("WINDOW_TYPE", ["boxcar", "triang", "blackman", "hamming",
 OVERLAP = int(env.get("OVERLAP", 15))
 N_PEAKS = int(env.get("N_PEAKS", 0))  # 0 means all
 
-AMPL_QUANTILES = {
-    i: pd.read_csv(f"../results/_v0.4-exp-uniref_sampling/sample_WINSIZE_{i}.csv", sep=",", usecols=["5%%-Quantile", "95%%-Quantile"]).rename(columns={"5%%-Quantile": 5, "95%%-Quantile": 95})
-    for i in range(10, 101, 10)
-}
+try:
+    AMPL_QUANTILES = {
+        i: pd.read_csv(f"../results/_v0.4-exp-uniref_sampling/sample_WINSIZE_{i}.csv", sep=",", usecols=["5%%-Quantile", "95%%-Quantile"]).rename(columns={"5%%-Quantile": 5, "95%%-Quantile": 95})
+        for i in range(10, 101, 10)
+    }
+except Exception as e:
+    AMPL_QUANTILES = {
+        i: pd.DataFrame({
+            5: [float("+inf")] * (WINDOW_SIZE // 2 + 1),
+            95: [float("-inf")] * (WINDOW_SIZE // 2 + 1)
+        })
+        for i in range(10, 101, 10)
+    }
+    eprint("not filtering amplitudes")
 
 
 def create_constellation(
