@@ -1,9 +1,9 @@
-# Recognition with Fast Fourier Transformation <br> v0.4-exp-uniref_sampling
+# Recognition with Fast Fourier Transformation <br> v0.4-exp-target_zone
 `NOTE: This README and the code are updated synchronously.`
 
-This experiment is to increase specificity in peak selection. To select peaks with amplitudes that are significantly high or low for a specific kidera factor, millions of random windows will be sampled and calculated to identify these amplitudes.
+This experiment is to identify a good target zone for the combinatorial hashes. Currently, the frequencies are paired up with all upcoming 2<sup>12</sup> frequencies, so actually all of them.
 
-The goal is to stop inflating the database with frequent hashes.
+Adjusting the zone accurately will reduce the database size, as less hashes are gonna be created, and it will also free some bits in the hash generation.
 
 ---
 
@@ -120,9 +120,10 @@ TQDM_DISABLE=1 python3 test.py
                     </td>
                 </tr>
                 <tr>
-                    <td>actions.find_matches:<br><code>find_matches(fasta_file, db_in)</code></td>
+                    <td>actions.find_matches:<br><code>find_matches(fasta_file, db_in, filter_quantile)</code></td>
                     <td>
                         <ol type="1">
+                            <li>filter the database hashes by <code>filter_quantile</code></li>
                             <li>for each protein in the file, find all match(es), using the database in <code>db_in</code>, and print them to stdout. The score consists of the custom score multiplied with the JSI</li>
                         </ol>
                     </td>
@@ -237,10 +238,8 @@ TQDM_DISABLE=1 python3 test.py
 |                          file                            |     content
 |----------------------------------------------------------|------------------
 |[\_v0.4-exp-uniref_sampling/sample_WINSIZE_\*.csv](./results/_v0.4-exp-uniref_sampling)|the interim results of the sampling
-|[summary.csv](./results/summary.csv)|a summary of the `_v0.4-exp-uniref_sampling/*.summary.csv` files
-|[frequencies.png](./results/frequencies.png)|A scatter plot of the frequences that are included in constellation maps
 |[runtimes_createdb.csv](./results/runtimes_createdb.csv)|The durations for creating the databases, plus the databases' sizes
-|[hashes_per_sequence_length.png](./results/hashes_per_sequence_length.png)|A plot of hashes per sequence grouped by sequence length
+|[summary.csv](./results/summary.csv)|a summary of the `_v0.4-exp-uniref_sampling/*.summary.csv` files
 
 ### Reproduce
 In this repository, `protein.fa` is used to generate the database. You can extract the file from [this archive](https://github.com/usadellab/prot-fin/raw/5be77c4247327e3958c89200c03a938ec4734834/material/Mapman_reference_DB_202310.tar.bz2). The archive also includes `mapmanreferencebins.results.txt` which maps the proteins to their families.
@@ -270,26 +269,11 @@ bash eval_times.sh > ../results/runtimes_createdb.csv
 python3 summary.py ../results/_v0.4-exp-uniref_sampling/*.summary.csv > ../results/summary.csv
 ```
 
-[frequencies.png](./results/frequencies.png):
-```sh
-cd methods
-materials=../../../materials
-python3 evaluation.py plot-frequencies -c 6 $materials/protein.fa ../results/frequencies.png
-```
-
-[hashes_per_sequence_length.png](./results/hashes_per_sequence_length.png)
-```sh
-cd methods
-materials=../../../materials
-py protfin.py create-db $materials/protein.fa -c 6
-python3 evaluation.py plot-hashes-per-sequence-length database.pickle ../results/hashes_per_sequence_length.png
-```
-
 ---
 ## Discussion/Brainstorming
-Compared to previous experiments, the database sizes are way lower, when having in mind that they are created for all kidera factors now.
+Compared to [previous](https://github.com/usadellab/prot-fin/blob/00571686e669166273509510169edde9f620ecf5/experiments/recog_with_fft/results/runtimes_createdb.csv) results, the database sizes are lower. Looking at the count of top scored matches doesn't seem to be a difference, even with only target zone 8 (3 bits). But this also makes sense, as the match finding samples were used to train the database and the constellation of frequencies is still too unique for the few proteins that are used here. So the original protein still gets the best score, maybe even with 1 bit of target zone.
 
-It seems that the number of selected peaks doesn't really matter, as the amplitudes are filtered by quantile. This makes sense, as the maximum number of local maxima is $\frac{window\_size - 2}{2}$, so for window size 20 (which seems to be very good here) it is 9. When filtering the amplitudes that extremely, there won't last many amplitudes to select a peak from.
+Reducing the zone seems to be a possible way to reduce database size without sacrificing accuracy in finding original sequences. But when trying to optimize family similarity, it should be kept in in mind as a possible parameter.
 
 Some ideas for future development:
  - reduce database size (still too big, should be same as input 18 MB)

@@ -1,7 +1,8 @@
 from tools import *
+from os import environ as env
 
 FREQUENCY_BITS = 5
-DIFFERENCE_BITS = 12
+DIFFERENCE_BITS = int(env.get("DIFFERENCE_BITS", 12))
 
 
 def create_hashes(
