@@ -94,7 +94,7 @@ def get_result_frame(
         result["Input_Sequence_Length"] = seq_len
         result["Input_Found_Hashes"] = hash_count
 
-        result["Rank"] = result[["JSI", "Score"]].apply(lambda x: x[0] * x[1], axis=1).rank(method="dense", ascending=False)
+        result["Rank"] = result[["Score"]].rank(method="dense", ascending=False)
 
     return result
 
