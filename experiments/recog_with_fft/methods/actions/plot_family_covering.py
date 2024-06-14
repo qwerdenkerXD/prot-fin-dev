@@ -14,7 +14,7 @@ def plot_family_covering(db: str, mapman: str, plot_out: str):
     proteins = proteins[proteins.index.notna()]
     proteins = proteins["BINCODE"].apply(str)
 
-    family_covering = {i: {} for i in proteins.unique()}#
+    family_covering: Dict[ProteinID, Dict[Hash, int]] = {i: {} for i in proteins.unique()}#
     for hash_, prots in tqdm(database.items()):
         fam = proteins.loc[[prot.lower() for _, prot in prots]]
         for f in fam:
@@ -22,18 +22,22 @@ def plot_family_covering(db: str, mapman: str, plot_out: str):
 
     plt.figure(figsize=(200, 5))
 
-    print("Index", "Family", "Member_Count", "Max_Covering", "Max_Covering_Hashes", sep=",")
+    print("Index", "Family", "Member_Count", "Max_Covering", "Max_Covering_Hash_Count", "Num_Different_Hashes", "Max_Covering_JSI", "Max_Covering_Hashes", sep=",")
     for i, fam in enumerate(family_covering):
         fam_member_count = (proteins == fam).sum()
         counts = np.array(list(family_covering[fam].values()))
         plt.boxplot(counts / fam_member_count, positions=[i], widths=.8)
         max_cov = counts.max() if len(counts) else 0
+        max_cov_hashes = sorted(str(h) for h, c in family_covering[fam].items() if c == max_cov)
         print(
             i,
             fam,
             fam_member_count,
             round(max_cov / fam_member_count, 2),
-            ";".join(sorted(str(h) for h, c in family_covering[fam].items() if c == max_cov)),
+            len(max_cov_hashes),
+            len(family_covering[fam]),
+            round(len(max_cov_hashes) / len(family_covering[fam]), 4) if len(family_covering[fam]) else 0,
+            ";".join(max_cov_hashes),
             sep=","
         )
 
