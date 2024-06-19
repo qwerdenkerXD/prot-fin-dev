@@ -22,17 +22,11 @@ python3 evaluation.py plot-prots-per-windist database.pickle plot.png
 # select sample proteins from different mapman bins
 python3 evaluation.py select-samples mapmanreferencebins.results.txt protein.fa > samples.fa
 
-# extend the protfin output (python3 protfin.py find-matches ... > protfin_out.csv) with two columns for the match related mapman bins
-awk -v protfin_out=protfin_out.csv -f extend_protfin_out.awk mapmanreferencebins.results.txt > protfin_out.extended.csv 
-
-# summarize extended protfin output
-python3 evaluation.py eval protfin_out.extended.csv > protfin_out.summary.csv
+# summarize protfin output
+python3 evaluation.py eval protfin_out.csv > protfin_out.summary.csv
 
 # summarize the *.summary.csv
 python3 summary.py *.summary.csv
-
-# create a plot of the extended output file
-python3 evaluation.py plot-extended-out protfin_out.extended.csv plot.png
 
 # generate a plot for counts of calculated hashes
 TITLE="Distribution of sequences' hash counts" X_LABEL="Hash counts" \
@@ -207,15 +201,6 @@ TQDM_DISABLE=1 python3 test.py
                     </td>
                 </tr>
                 <tr>
-                    <td><code>plot_extended_out(ext_out, plot_out)</code></td>
-                    <td>
-                        <ol type="1">
-                            <li>Iterate through the proteins' matches and plot a box of the scores of each</li>
-                            <li>Also add dots for each score of family and non-family matches</li>
-                        </ol>
-                    </td>
-                </tr>
-                <tr>
                     <td><code>plot_prots_per_windist(database, out_file)</code></td>
                     <td>
                         <ol type="1">
@@ -227,7 +212,6 @@ TQDM_DISABLE=1 python3 test.py
             </table>
         </details>
     </li>
-    <li><code>extend_protfin_out.awk</code> - A script to extend the protfin output with two columns for the match related mapman bins</li>
     <li><code>raincloud_plot.R</code> - A script to plot groups of values into a raincloud plot</li>
     <li><code>summary.py</code> - A script to summarize the output of <code>evaluation.py eval</code></li>
     <li><code>eval_times.py</code> - A script to fetch the durations for database creation</li>

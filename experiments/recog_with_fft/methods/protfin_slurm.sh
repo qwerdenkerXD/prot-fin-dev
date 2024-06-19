@@ -1,12 +1,14 @@
 # bash protfin_slurm.sh ../../../materials/protein.fa ../../../materials/mapmanreferencebins.results.txt
 
 function sbatch_script() {
-    name=../results/${exp}/protfin_WINSIZE_${window_size}_NPEAKS_${peaks}_OVERLAP_${overlap}
+    name=protfin_WINSIZE_${window_size}_NPEAKS_${peaks}_OVERLAP_${overlap}
+    result_name=../results/${exp}/${name}
     filtname=${name}_FILT_${filt}
+    result_filtname=../results/${exp}/${filtname}
     echo "#!/bin/bash -l
 
 # name
-#SBATCH --job-name=protfin_WINSIZE_${window_size}_NPEAKS_${peaks}_OVERLAP_${overlap}_FILT_${filt}
+#SBATCH --job-name=${filtname}
 
 # cpu
 #SBATCH --ntasks=1
@@ -16,11 +18,12 @@ function sbatch_script() {
 #SBATCH --output=../results/${exp}/_logs/%x_%j_slurm.out
 #SBATCH --error=../results/${exp}/_logs/%x_%j_slurm.err
 
-WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py create-db -p ${name}.pickle $1
-WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py find-matches -f ${filt} -d ${name}.pickle ../results/${exp}/_test_selection.fa > ${filtname}.matches
-awk -v protfin_out=${filtname}.matches -f extend_protfin_out.awk $2 > ${filtname}.matches.extended
-rm ${filtname}.matches
-python3 evaluation.py eval ${filtname}.matches.extended > ${filtname}.summary.csv
+echo createdb >&2
+WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py create-db -p ${result_name}.pickle $1
+echo findmatches >&2
+WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py find-matches -f ${filt} -d ${result_name}.pickle ../results/${exp}/_test_selection.fa > ${result_filtname}.matches
+echo eval >&2
+python3 evaluation.py eval ${result_filtname}.matches.extended $2 > ${result_filtname}.summary.csv
 "
 }
 
