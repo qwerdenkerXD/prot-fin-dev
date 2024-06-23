@@ -56,7 +56,16 @@ def find_matches(
     f = np.cumsum(hash_frequencies)
     quantile_value = hash_frequencies[np.searchsorted(f, filter_quantile * f[-1])]
 
+    hash_blacklist = [hash_ for hash_, v in database.items() if len(v) > quantile_value]
     database = {k: v for k, v in database.items() if len(v) <= quantile_value}
+
+    hash_counts = {k: 0 for k in protein_lookup}
+    for prots in database.values():
+        for _, p in prots:
+            hash_counts[p] += 1
+    for p, val in protein_lookup.items():
+        protein_lookup[p] = (val[0], hash_counts[p])
+
     size_now = sys.getsizeof(pickle.dumps((database, protein_lookup), pickle.HIGHEST_PROTOCOL))
     eprint(int(size_now / prev_size * 100), r"%", " (%.2fMB) of database size used by quantile filter" % (size_now / (1024**2)), sep="")
 
@@ -66,6 +75,7 @@ def find_matches(
     for input_id, _, seq in Fasta(fasta_file):
         # create the combinatorial hashes for the sequence
         hashes: Hashes = hashes_from_seq(seq, None)
+        hashes = {k: v for k, v in hashes.items() if k not in hash_blacklist}
 
         # calculate the scores for proteins in the database
         scored_matches: ScoresMap = score_prots(hashes, database, protein_lookup)
@@ -94,7 +104,7 @@ def get_result_frame(
         result["Input_Sequence_Length"] = seq_len
         result["Input_Found_Hashes"] = hash_count
 
-        result["Rank"] = result[["Score"]].rank(method="dense", ascending=False)
+        result["Rank"] = result[["JSI", "Score"]].apply(lambda x: x[0] * x[1], axis=1).rank(method="dense", ascending=False)
 
     return result
 

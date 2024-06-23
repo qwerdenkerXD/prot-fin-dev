@@ -105,7 +105,7 @@ class Fasta:
             if check:
                 self.protein_count = count_appearances_in_file("^>", f)
 
-                # validate ... TODO
+                # validate ... TODO or validate during iteration like (re.match("^[A-Z]+$", seq) is not None)
 
             else:
                 self.protein_count = None

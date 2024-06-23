@@ -3,12 +3,10 @@
 function sbatch_script() {
     name=protfin_WINSIZE_${window_size}_NPEAKS_${peaks}_OVERLAP_${overlap}
     result_name=../results/${exp}/${name}
-    filtname=${name}_FILT_${filt}
-    result_filtname=../results/${exp}/${filtname}
     echo "#!/bin/bash -l
 
 # name
-#SBATCH --job-name=${filtname}
+#SBATCH --job-name=${name}
 
 # cpu
 #SBATCH --ntasks=1
@@ -20,10 +18,13 @@ function sbatch_script() {
 
 echo createdb >&2
 WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py create-db -p ${result_name}.pickle $1
-echo findmatches >&2
-WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py find-matches -f ${filt} -d ${result_name}.pickle ../results/${exp}/_test_selection.fa > ${result_filtname}.matches
-echo eval >&2
-python3 evaluation.py eval ${result_filtname}.matches.extended $2 > ${result_filtname}.summary.csv
+
+for filt in .1 .25 .5 .75; do
+    echo findmatches FILT \$filt >&2
+    WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} python3 protfin.py find-matches -f \${filt} -d ${result_name}.pickle ../results/${exp}/_test_selection.fa > ${result_name}_FILT_\${filt}.matches
+    echo eval FILT \$filt >&2
+    python3 evaluation.py eval ${result_name}_FILT_\${filt}.matches $2 > ${result_name}_FILT_\${filt}.summary.csv
+done
 "
 }
 
@@ -46,9 +47,7 @@ for (( window_size=50; window_size >= 10; window_size-=10 )); do
 
     for overlap in "${overlaps[@]}"; do
         for peaks in 5 3 0; do
-            for filt in .1 .25 .5 .75; do
-                sbatch --chdir . <(sbatch_script $*)
-            done
+            sbatch --chdir . <(sbatch_script $*)
         done
     done
 done

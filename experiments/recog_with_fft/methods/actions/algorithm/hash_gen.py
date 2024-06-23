@@ -1,7 +1,7 @@
 from tools import *
 
 FREQUENCY_BITS = 5
-DIFFERENCE_BITS = 12
+DIFFERENCE_BITS = 3
 
 
 def create_hashes(

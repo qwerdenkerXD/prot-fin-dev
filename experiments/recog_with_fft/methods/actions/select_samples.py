@@ -3,7 +3,6 @@ from tools import Fasta, ProteinID
 import pandas as pd
 from numpy import random
 
-Families = List[List[int]]
 Samples = Dict[ProteinID, str]
 
 random.seed(1)
@@ -30,45 +29,37 @@ def select_samples(mapman: str, protein_file: str, samples_per_family: int):
     """
 
     # read the mapman reference
-    map_data: pd.DataFrame = pd.read_csv(mapman, sep="\t", quotechar="'").loc[:, ["BINCODE", "IDENTIFIER"]]
-
-    # get families' members' indices
-    families: Families = get_groups(map_data)
-
+    map_data: pd.Series = read_mapman(mapman)
+    families = map_data.value_counts()
     samples: Samples = get_samples(families, samples_per_family, map_data)
 
     print_samples(samples, protein_file)
 
 
+def read_mapman(mapman: str) -> pd.Series:
+    data = pd.read_csv(mapman, sep="\t", quotechar="'", index_col=1, usecols=["IDENTIFIER", "BINCODE"]).squeeze()
+    data = data[data.index.notna() & ~data.str.startswith("50.") & ~data.str.startswith("35.")]
+    return data
+
+
 def print_samples(samples, protein_file):
     for prot_id, _, seq in Fasta(protein_file):
-        if prot_id in samples:
-            print(">%s  %s\n%s" % (prot_id, samples[prot_id], seq))
+        if prot_id.lower() in samples:
+            print(">%s  %s\n%s" % (prot_id, samples[prot_id.lower()], seq))
 
 
-def get_samples(families: Families, samples_per_family: int, map_data: pd.DataFrame) -> Samples:
+def get_samples(families: pd.Series, samples_per_family: int, map_data: pd.DataFrame) -> Samples:
     selected_samples: Samples = {}
-    for fam in families:
-        chosen_idx = random.choice(fam, samples_per_family, replace=False)
-        for fam_id, prot_id in map_data.iloc[chosen_idx].to_numpy():
-            selected_samples[prot_id.upper()] = fam_id
+    families = families[families > 1].groupby(lambda bincode: int(bincode.split(".", 1)[0]))
+
+    for _, fam in families:
+        chosen_idx = random.choice(len(fam), samples_per_family, replace=False)
+        assert len(fam.index[chosen_idx]) == samples_per_family
+        for fam_id in fam.index[chosen_idx]:
+            members = map_data[(map_data == fam_id)]
+
+            members = members[~members.index.isin(selected_samples.keys())]
+            prot_id = members.index[random.choice(len(members))]
+            selected_samples[prot_id] = fam_id
 
     return selected_samples
-
-
-def get_groups(map_data: pd.DataFrame) -> Families:
-    # The following groups the rows by family:
-    # mask: every index that introduces a new family has value of 1 (=True), the others have 0 (False) -> [1, 0, 0, 0, ..., 1, 0, ...]
-    # cumsum: The cumulative sum enumerates the families, as the family starts with 1 and the members have value of zero -> [1, 1, ..., 2, 2, ...]
-    mask = ~map_data["BINCODE"].str.contains("\\.")
-    groups = mask.cumsum()
-
-    # erase the rows that introduce a family
-    mask = ~map_data["IDENTIFIER"].isnull()
-    groups = groups[mask]
-    map_data = map_data[mask]
-
-    # get the families as lists of the indices that are part of the family
-    families: Families = [v.index.tolist() for _, v in map_data.groupby(groups)]
-
-    return families
