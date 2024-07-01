@@ -61,7 +61,7 @@ def get_aa_vector(
 
     # normalizing to non-negatives by adding the absolute of the global minimum
     if normalize:
-        sel_factor = KIDERA_TABLE.iloc[factor] + KIDERA_MIN
+        sel_factor = KIDERA_TABLE.iloc[factor] + KIDERA_MIN + 1
 
     # define symbols representing multiple amino acids
     extend_selected_factor(sel_factor)

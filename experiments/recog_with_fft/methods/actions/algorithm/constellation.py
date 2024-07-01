@@ -95,7 +95,8 @@ def create_constellation(
         overlap = window_size - 1
 
     if len(aa_vec) < window_size:
-        return []
+        aa_vec = np.pad(aa_vec, (0, window_size - len(aa_vec)))
+        assert len(aa_vec) == window_size
 
     # executing the STFT
     stft_result = signal.stft(
@@ -121,25 +122,28 @@ def stft_to_constellation(
 
         # get rid of complex values to make them comparable
         spectrum: np.ndarray = abs(amplitudes)
-        positive = np.argwhere(spectrum > AMPL_QUANTILES[WINDOW_SIZE][95]).flatten()
-        negative = np.argwhere(spectrum < AMPL_QUANTILES[WINDOW_SIZE][5]).flatten()
 
-        for i, filt in enumerate((negative, positive)):
-            # find peaks
-            peaks: List[int] = find_peaks(spectrum[filt], n_peaks)
-
-            constellation_map.append(tuple((int(filt[peak]), float(spectrum[filt][peak]), i) for peak in peaks))
+        for quantile, filt in enumerate(find_peaks(spectrum, n_peaks)):
+            constellation_map.append(tuple((int(freq_idx), float(spectrum[freq_idx]), quantile) for freq_idx in filt))
 
     return constellation_map
 
 
 def find_peaks(spectrum: np.ndarray, n_peaks: int) -> List[int]:
     # prominence=0 includes all peaks, but weights their prominence as well
-    peaks, props = signal.find_peaks(spectrum, prominence=0)
+    # peaks, props = signal.find_peaks(spectrum, prominence=0)
 
     # Only want the most prominent peaks
-    peaks: List[Tuple[int, int]] = sorted(zip(props["prominences"], peaks), reverse=True)
-    if n_peaks:
-        peaks = peaks[:n_peaks]
+    # peaks: List[Tuple[int, int]] = sorted(zip(props["prominences"], peaks), reverse=True)
 
-    return [int(p[1]) for p in peaks]
+    q95_idx = np.argwhere(spectrum > AMPL_QUANTILES[WINDOW_SIZE][95]).flatten()
+    q95_peaks = sorted(zip(spectrum[q95_idx], q95_idx), reverse=True) if len(q95_idx) else []
+    if n_peaks:
+        q95_peaks = q95_peaks[:n_peaks]
+
+    q5_idx = np.argwhere(spectrum < AMPL_QUANTILES[WINDOW_SIZE][5]).flatten()
+    q5_peaks = sorted(zip(spectrum[q5_idx], q5_idx), reverse=True) if len(q5_idx) else []
+    if n_peaks:
+        q5_peaks = q5_peaks[:n_peaks]
+
+    return [int(p[1]) for p in q95_peaks], [int(p[1]) for p in q5_peaks]

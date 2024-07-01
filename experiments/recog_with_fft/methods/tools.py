@@ -20,7 +20,7 @@ Hashes = Dict[Hash, HashOccurence]
 Scores = List[Tuple[ProteinID, Tuple[WindowIndex, Score, JSI]]]
 Database = Dict[Hash, List[HashOccurence]]
 ProteinLookup = Dict[ProteinID, Tuple[int, int]]
-ConstellationMap = List[Tuple[Tuple[int, float], ...]]
+ConstellationMap = List[Tuple[Tuple[int, float, int], ...]]
 
 
 def pd_read_chunkwise(csv_file: str, chunksize=10_000) -> Generator[pd.DataFrame, None, None]:

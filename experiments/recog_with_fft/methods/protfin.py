@@ -5,7 +5,7 @@ features of their amino acid sequences
 """
 
 import argparse
-from actions import create_db, find_matches
+from actions import create_db, find_matches, match_family
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE, SIG_DFL)  # fixes weird python error, look: https://newbebweb.blogspot.com/2012/02/python-head-ioerror-errno-32-broken.html
 
@@ -52,6 +52,18 @@ def get_cli():
     find_match_parser.set_defaults(func=lambda args:
                                    find_matches(
                                        getattr(args, "fasta-file"),
+                                       db_in=args.database,
+                                       filter_quantile=args.filter
+                                   ))
+
+    # protfin.py match-family [-d] <fasta-file>
+    find_match_parser = sub_commands.add_parser("match-family", help="Find Matches for Proteins")
+    find_match_parser.add_argument("family-file")
+    find_match_parser.add_argument("-d", "--database", default=DB_DEFAULT)
+    find_match_parser.add_argument("-f", "--filter", default=1., type=float)
+    find_match_parser.set_defaults(func=lambda args:
+                                   match_family(
+                                       getattr(args, "family-file"),
                                        db_in=args.database,
                                        filter_quantile=args.filter
                                    ))

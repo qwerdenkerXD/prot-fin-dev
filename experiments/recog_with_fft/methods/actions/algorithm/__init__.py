@@ -27,6 +27,6 @@ def hashes_from_seq(seq: str, prot_id: str) -> Hashes:
         # start the pipeline
         aa_vec = get_aa_vector(seq, kf)
         constellation = create_constellation(aa_vec)
-        hashes = {**hashes, **create_hashes(constellation, prot_id, kf)}
+        hashes = {**hashes, **create_hashes(constellation, prot_id, kf)[0]}
 
     return hashes

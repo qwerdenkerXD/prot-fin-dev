@@ -88,6 +88,13 @@ def get_cli():
     eval_parser.add_argument("out-file")
     eval_parser.set_defaults(func=lambda args: plot_family_covering(getattr(args, "database-file"), getattr(args, "mapman-file"), getattr(args, "out-file")))
 
+    # evaluation.py plot-hash-frequencies <protein-file> <out-file>
+    eval_parser = sub_commands.add_parser("plot-hash-frequencies", help="Plot the average frequencies of hashes in a sequence")
+    eval_parser.add_argument("protein-file")
+    eval_parser.add_argument("out-file")
+    eval_parser.add_argument("-c", "--cpu", default=1, type=int)
+    eval_parser.set_defaults(func=lambda args: plot_hash_frequencies(getattr(args, "protein-file"), getattr(args, "out-file"), args.cpu))
+
     return parser
 
 
