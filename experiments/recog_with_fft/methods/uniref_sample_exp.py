@@ -108,7 +108,23 @@ class WeightedRainCloudPlot:
         def get_pos(y):
             return (box_width + 1.5) * y
 
-        print("Window_Size,Sample_Count_Mio,Frequency,5%%-Quantile,95%%-Quantile,First_Lower_Outlier,First_Upper_Outlier")
+        print(
+            "Window_Size",
+            "Sample_Count_Mio",
+            "Frequency",
+            "5%%-Quantile",
+            "95%%-Quantile",
+            "First_Lower_Outlier",
+            "First_Upper_Outlier",
+            "Std_Deviation",
+            "Mean",
+            "0.1%%-Quantile",
+            "99.9%%-Quantile",
+            "0.01%%-Quantile",
+            "99.99%%-Quantile",
+            "0.001%%-Quantile",
+            "99.999%%-Quantile",
+            sep=",")
 
         for i, (values, val_weights) in enumerate(zip(self.group_values, self.group_val_weights)):
             pos = get_pos(i)
@@ -123,9 +139,19 @@ class WeightedRainCloudPlot:
             values = values[sort_by_values]
             val_weights = np.array(list(val_weights))[sort_by_values]
 
+            mean = (values * val_weights).sum() / sample_count
+            variance = ((values - mean) ** 2 * val_weights).sum() / (sample_count - 1)
+            std_dev = variance ** .5
+
             f = np.cumsum(val_weights)
             n05, first_quart, median, third_quart, n95 = \
                 np.round(values[np.searchsorted(f, np.array([alpha, .25, .5, .75, 1 - alpha]) * f[-1])], 5)
+
+            extra_quant_idx = np.searchsorted(f, np.array([0.1, 99.9, 0.01, 99.99, 0.001, 99.999]) * f[-1])
+            extra_quant_idx_above = extra_quant_idx == len(values)
+            extra_quant_idx[extra_quant_idx_above] -= 1
+            extra_quantiles = \
+                np.round(values[extra_quant_idx], 5)
 
             below_q1 = values[values < first_quart]
             above_q3 = values[values > third_quart]
@@ -188,6 +214,9 @@ class WeightedRainCloudPlot:
                 n95,
                 round(lower_fliers[-1], 5) if len(lower_fliers) else "",
                 round(upper_fliers[0], 5) if len(upper_fliers) else "",
+                std_dev,
+                mean,
+                *extra_quantiles,
                 sep=",")
 
             # draw box
