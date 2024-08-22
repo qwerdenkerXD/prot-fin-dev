@@ -26,7 +26,7 @@ python3 evaluation.py select-samples mapmanreferencebins.results.txt protein.fa 
 awk -v protfin_out=protfin_out.csv -f extend_protfin_out.awk mapmanreferencebins.results.txt > protfin_out.extended.csv 
 
 # summarize extended protfin output
-python3 evaluation.py eval protfin_out.extended.csv > protfin_out.summary.csv
+python3 evaluation.py eval protfin_out.csv mapmanreferencebins.results.txt > protfin_out.summary.csv
 
 # summarize the *.summary.csv
 python3 summary.py *.summary.csv

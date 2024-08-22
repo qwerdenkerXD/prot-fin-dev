@@ -146,8 +146,7 @@ class WeightedRainCloudPlot:
             f = np.cumsum(val_weights)
             n05, first_quart, median, third_quart, n95 = \
                 np.round(values[np.searchsorted(f, np.array([alpha, .25, .5, .75, 1 - alpha]) * f[-1])], 5)
-
-            extra_quant_idx = np.searchsorted(f, np.array([0.1, 99.9, 0.01, 99.99, 0.001, 99.999]) * f[-1])
+            extra_quant_idx = np.searchsorted(f, np.array([0.001, 0.999, 0.0001, 0.9999, 0.00001, 0.99999]) * f[-1])
             extra_quant_idx_above = extra_quant_idx == len(values)
             extra_quant_idx[extra_quant_idx_above] -= 1
             extra_quantiles = \
