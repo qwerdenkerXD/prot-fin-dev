@@ -3,6 +3,7 @@ from glob import glob
 from sys import argv as args
 from tqdm import tqdm
 from tools import eprint
+from os.path import exists, getsize
 import re
 
 res = pd.DataFrame(columns=[
@@ -11,7 +12,7 @@ res = pd.DataFrame(columns=[
     "Overlap",
     "Hash_Use_First_Appearance",
     "Quantile",
-    "Median_Hits",
+    "Median_Hits_Top_Score",
     "Average_Hits",
     "Self_Matches",
     "Unique_Self_Matches",
@@ -19,8 +20,9 @@ res = pd.DataFrame(columns=[
     "Mean_Precision",
     "Mean_Liberal_F1_Score",
     "Mean_Liberal_Precision",
+    "Mean_Sharpness",
     "DB_Size_MB",
-    "Runtime_find-matches"
+    "Runtime_find-matches",
     ]
 )
 for file in tqdm(args[1:]):
@@ -29,15 +31,15 @@ for file in tqdm(args[1:]):
         logfile = file.split("/")
         logfile.insert(-1, "_logs")
         logfile = glob("%s*.err" % "/".join(logfile).rsplit("_FILT", 1)[0])[0]
-        params = re.findall('WINSIZE_(\d+)_NPEAKS_(\d+)_OVERLAP_(\d+)_FIRSTAPPEARANCE_(\d+)_FILT_(\.?\d+)', file)[0]
+        params = re.findall('WINSIZE_(\d+)_NPEAKS_(\d+)_OVERLAP_(\d+)_FIRSTAPPEARANCE_(\d+)_FILT_(\.\d+)', file)[0]
         with open(logfile, "r") as f:
             log = f.readlines()
-            create_db_time = None
+            time_regex = re.compile("([:\d]+)<[:\d]+,[ \d\.it/s\]]+$")
             for i, line in enumerate(log):
                 if line == "findmatches FILT %s\n" % params[-1]:
                     db_size = re.search("\(([\d\.]+)MB\) of database", log[i+1]).group(1)
                 elif line == "eval FILT %s\n" % params[-1]:
-                    find_matches_time = re.search("([:\d]+)<[:\d]+,[ \d\.it/s\]]+$", log[i-1])
+                    find_matches_time = time_regex.search(log[i-1]).group(1)
                     break  # eval comes after findmatches -> all conditions met
             del log
 
@@ -52,11 +54,12 @@ for file in tqdm(args[1:]):
                     summary["Precision"].mean(),
                     summary["Liberal_F1_Score"].mean(),
                     summary["Precision_Liberal"].mean(),
+                    summary["Sharpness"].mean(),
                     db_size,
-                    find_matches_time.group(1)
+                    find_matches_time,
                 )
     except Exception as e:
-        eprint("Problems with file '%s': May be empty" % file)
+        # raise e
+        eprint("Problems with file '%s': May be empty: %s" % (file, e))
 
-res["Hash_Use_First_Appearance"] = res["Hash_Use_First_Appearance"].apply(lambda x: bool(int(x)))
 print(res.sort_values("Mean_F1_Score", ascending=False).to_csv(index=False, float_format="%g"))

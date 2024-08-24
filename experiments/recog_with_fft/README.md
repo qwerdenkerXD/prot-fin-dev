@@ -23,7 +23,7 @@ python3 evaluation.py plot-prots-per-windist database.pickle plot.png
 python3 evaluation.py select-samples mapmanreferencebins.results.txt protein.fa > samples.fa
 
 # summarize protfin output
-python3 evaluation.py eval protfin_out.csv > protfin_out.summary.csv
+python3 evaluation.py eval protfin_out.csv mapmanreferencebins.results.txt > protfin_out.summary.csv
 
 # summarize the *.summary.csv
 python3 summary.py *.summary.csv

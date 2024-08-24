@@ -38,18 +38,37 @@ def evaluate_protfin(protfin_out_file: str, mapman: str):
     mapman_data = read_mapman(mapman)
 
     # data will be collected into a dataframe
-    evaluation = pd.DataFrame(columns=["Sample_ID", "First_Match_Count", "Sample_In_First_Matches", "Sequence_Length", "Sample_Hashes", "Sample_JSI", "Sample_Score", "Top_JSI", "Top_Score", "F1_Score", "Liberal_F1_Score", "Precision", "Precision_Liberal"])
+    evaluation = pd.DataFrame(columns=["Sample_ID", "First_Match_Count", "Sample_In_First_Matches", "Sequence_Length", "Sample_Hashes", "Sample_JSI", "Sample_Score", "Top_JSI", "Top_Score", "F1_Score", "Liberal_F1_Score", "Precision", "Precision_Liberal", "Sharpness"])
     for matches in pd_read_chunkwise(protfin_out_file):
         if matches.size:
             input_sample = matches["Input_Protein_ID"].iloc[0]
             sample_result = matches[matches["Match_Protein_ID"] == input_sample]
 
+            # proteins can have multiple families
             input_fams = np.array(mapman_data[input_sample.lower()], ndmin=1, dtype=str)
 
+            # pandas series of proteins -> True/False if protein is shares an input family or not
             members = mapman_data.isin(input_fams).groupby(mapman_data.index).max()
+
+            # all lowercase protein identifiers, as mapman is lowercase
             match_prots = matches["Match_Protein_ID"].apply(str.lower)
-            matches_fams = members[match_prots[match_prots.isin(members.index)]][::-1]
-            member_counts = matches_fams.cumsum()
+
+            # a mask to select proteins that are known by mapman
+            member_match_mask = match_prots.isin(members.index)
+
+            # match protein -> True/False if protein is shares an input family or not
+            matches_fams = members[match_prots[member_match_mask]]
+
+            member_counts = matches_fams[::-1].cumsum()
+
+            # first index of True 
+            tp_max_score_idx = matches_fams.index.get_loc(matches_fams.idxmax())
+            assert tp_max_score_idx == 0
+            fp_max_score_idx = matches_fams.index.get_loc((~matches_fams).idxmax())
+            tp_max_score = (matches["Score"] * matches["JSI"]).iloc[tp_max_score_idx] if matches_fams[tp_max_score_idx] else 0
+            fp_max_score = (matches["Score"] * matches["JSI"]).iloc[fp_max_score_idx] if not matches_fams[fp_max_score_idx] else 0
+
+            sharpness = (tp_max_score - fp_max_score) / tp_max_score if tp_max_score > 0 else -1
 
             true_positives = member_counts.iloc[-1]
             false_negatives = members.sum() - true_positives
@@ -75,7 +94,8 @@ def evaluate_protfin(protfin_out_file: str, mapman: str):
                 f1,
                 lib_f1,
                 f1_prec,
-                lib_prec
+                lib_prec,
+                sharpness
             )
 
     # write to stdout
