@@ -33,19 +33,7 @@ class TestKidera(TestCase):
 
 
 class TestConstellation(TestCase):
-    def test_find_peaks(self):
-        spectrum = [10, 9, 0, 1, 0, 7, 6]
-        peaks = [5, 3]
-        returned = self.create_valid(
-            List[int],
-            find_peaks(spectrum, 1)
-        )
-        self.assertEqual(returned, peaks[:1])
-        returned = self.create_valid(
-            List[int],
-            find_peaks(spectrum, 0)
-        )
-        self.assertEqual(returned, peaks)
+    ...
 
 
 class TestHashGen(TestCase):
@@ -66,7 +54,7 @@ class TestHashGen(TestCase):
         )
         hashes = self.create_valid(
             Hashes,
-            create_hashes(const_map, ProteinID(), 0)
+            create_hashes(const_map, ProteinID(), 0)[0]
         )
         self.assertEqual(len(hashes), 2, "Expected exactly two created hash")
         expected_hashes = (

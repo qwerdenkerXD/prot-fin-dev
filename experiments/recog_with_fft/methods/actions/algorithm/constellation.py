@@ -129,7 +129,7 @@ def stft_to_constellation(
     return constellation_map
 
 
-def find_peaks(spectrum: np.ndarray, n_peaks: int) -> List[int]:
+def find_peaks(spectrum: np.ndarray, n_peaks: int) -> Tuple[List[int], List[int]]:
     # prominence=0 includes all peaks, but weights their prominence as well
     # peaks, props = signal.find_peaks(spectrum, prominence=0)
 
