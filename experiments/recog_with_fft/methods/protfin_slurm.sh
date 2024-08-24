@@ -17,9 +17,7 @@ function sbatch_script() {
 
 WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} DIFFERENCE_BITS=${diff} python3 protfin.py create-db -p ${name}.pickle $1
 WINDOW_SIZE=${window_size} OVERLAP=${overlap} N_PEAKS=${peaks} DIFFERENCE_BITS=${diff} python3 protfin.py find-matches -d ${name}.pickle ../results/${exp}/_test_selection.fa > ${name}.matches
-awk -v protfin_out=${name}.matches -f extend_protfin_out.awk $2 > ${name}.matches.extended
-rm ${name}.matches
-python3 evaluation.py eval ${name}.matches.extended > ${name}.summary.csv
+python3 evaluation.py eval ${name}.matches $2 > ${name}.summary.csv
 "
 }
 

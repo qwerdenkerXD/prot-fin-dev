@@ -25,8 +25,8 @@ python3 evaluation.py select-samples mapmanreferencebins.results.txt protein.fa 
 # extend the protfin output (python3 protfin.py find-matches ... > protfin_out.csv) with two columns for the match related mapman bins
 awk -v protfin_out=protfin_out.csv -f extend_protfin_out.awk mapmanreferencebins.results.txt > protfin_out.extended.csv 
 
-# summarize extended protfin output
-python3 evaluation.py eval protfin_out.extended.csv > protfin_out.summary.csv
+# summarize protfin output
+python3 evaluation.py eval protfin_out.csv mapmanreferencebins.results.txt > protfin_out.summary.csv
 
 # summarize the *.summary.csv
 python3 summary.py *.summary.csv

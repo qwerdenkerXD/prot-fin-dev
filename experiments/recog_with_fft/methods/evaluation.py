@@ -31,7 +31,8 @@ def get_cli():
     # evaluation.py eval <protfin-out-file>
     eval_parser = sub_commands.add_parser("eval", help="Evaluate protfin find-matches output")
     eval_parser.add_argument("protfin-out-file")
-    eval_parser.set_defaults(func=lambda args: evaluate_protfin(getattr(args, "protfin-out-file")))
+    eval_parser.add_argument("mapman-file")
+    eval_parser.set_defaults(func=lambda args: evaluate_protfin(getattr(args, "protfin-out-file"), getattr(args, "mapman-file")))
 
     # evaluation.py select-samples [-s] <mapman-file> <protein-file>
     eval_parser = sub_commands.add_parser("select-samples", help="Select samples from reference")
